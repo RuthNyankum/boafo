@@ -4,6 +4,7 @@ import { FaEarDeaf, FaEyeLowVision } from 'react-icons/fa6';
 
 const AccessibilityOptions = () => {
   const [openSection, setOpenSection] = useState<number | null>(null);
+  const [image, setImage] = useState('');
 
   const toggleSection = (section: number) => {
     setOpenSection(openSection === section ? null : section);
@@ -29,10 +30,16 @@ const AccessibilityOptions = () => {
 
   return (
     <div className="p-14 bg-white rounded-lg shadow-lg w-full md:w-2/3 mx-auto">
+      <img src={image} alt="Captured Image" />
       {options.map((item, index) => (
         <div key={index} className="mb-4 border rounded-lg overflow-hidden">
           <button
-            onClick={() => toggleSection(index)}
+            onClick={() => {
+              toggleSection(index);
+              chrome.tabs.captureVisibleTab(chrome.windows.WINDOW_ID_CURRENT, {}, (dataUrl: string) => {
+                setImage(dataUrl);
+              });
+            }}
             className="w-full flex justify-between items-center p-6 text-2xl font-bold bg-gray-100 hover:bg-gray-200 focus:outline-none"
           >
             <div className="flex items-center gap-6">
