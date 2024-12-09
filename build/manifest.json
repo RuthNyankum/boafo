@@ -1,12 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "React Chrome Extension",
+  "name": "Accessibility Options",
+  "description": "Provides accessibility features like text-to-speech, speech-to-text, and interface resizing.",
   "version": "1.0.0",
-  "description": "A simple React app as a Chrome extension",
+  "permissions": ["activeTab", "storage", "scripting", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "index.html"
-  },
-  "permissions": [
-    "activeTab"
-  ]
+  }
 }
