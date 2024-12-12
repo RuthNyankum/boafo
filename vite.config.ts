@@ -1,29 +1,24 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
+import path from 'path';
 
 export default defineConfig({
-  plugins: [
-    react(),
-    viteStaticCopy({
-      targets: [
-        {
-          src: 'public/manifest.json',
-          dest: '.',
-        },
-        {
-          src: 'public/background.js',
-          dest: '.',
-        },
-      ],
-    }),
-  ],
+  plugins: [react()],
   build: {
     outDir: 'build',
     rollupOptions: {
       input: {
-        main: './index.html',
+        main: path.resolve(__dirname, 'index.html'),
       },
-    },
+      output: {
+        dir: 'build'
+      }
+    }
   },
+  // Optionally, copy extension files
+  resolve: {
+    alias: {
+      '@extension': path.resolve(__dirname, 'extension')
+    }
+  }
 });
