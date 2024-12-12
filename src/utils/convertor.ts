@@ -1,11 +1,11 @@
 import { createWorker } from "tesseract.js";
 
-const convertor = async (img: string, lang: string): Promise<string> => {
-  console.log("Initializing Tesseract.js worker...");
+const convertor = async (img: string, lang: string = 'eng'): Promise<string> => {
+  console.log(`Initializing Tesseract.js worker for ${lang} language`);
   const worker = await createWorker({
-    workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@v5.1.1/dist/worker.min.js',
-    langPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@v5.1.1/dist/lang/',
-    corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v2.4.0/tesseract-core.wasm.js',
+    workerPath: chrome.runtime.getURL('lib/tesseract/worker.min.js'),
+    langPath: chrome.runtime.getURL('lib/tesseract/'),
+    corePath: chrome.runtime.getURL('lib/tesseract/tesseract-core.wasm.js'),
   });
 
   try {
