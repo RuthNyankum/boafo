@@ -2,7 +2,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2022",
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM"],  // Added DOM for browser-specific types
     "module": "ESNext",
     "skipLibCheck": true,
 
@@ -20,7 +20,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    "types": ["chrome"]
+    // Added for Chrome extension support
+    "types": ["chrome", "vite/client"]
   },
-  "include": ["vite.config.ts"]
+  "include": [
+    "vite.config.ts",
+    "public/background.js",  // Include background script
+    "public/content.js"      // Include content script
+  ]
 }

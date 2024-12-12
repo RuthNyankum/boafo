@@ -1,5 +1,6 @@
 import React from 'react';
 import { LanguageOption } from '../../types/accessibility';
+import { motion } from 'framer-motion';
 
 interface LanguageSelectorProps {
   langOptions: LanguageOption[];
@@ -13,23 +14,27 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   setSelectedLanguage,
 }) => {
   return (
-    <div className="mt-6 flex justify-end">
-      <div className="bg-gray-100 rounded-lg shadow-md p-3 w-fit">
-        <select
-          id="language"
-          value={selectedLanguage}
-          className="bg-gray-100 text-lg focus:outline-none"
-          onChange={(e) => setSelectedLanguage(e.target.value)}
-        >
-          {langOptions.map((option, index) => (
-            <option key={index} value={option.value}>
-              {option.lang}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3, duration: 0.3 }}
+      className="mt-4 flex justify-end"
+    >
+      <select
+        id="language"
+        value={selectedLanguage}
+        className="bg-gray-100 text-sm rounded-md border-none focus:ring-2 focus:ring-blue-500 p-2"
+        onChange={(e) => setSelectedLanguage(e.target.value)}
+      >
+        {langOptions.map((option, index) => (
+          <option key={index} value={option.value}>
+            {option.lang}
+          </option>
+        ))}
+      </select>
+    </motion.div>
   );
 };
 
 export default LanguageSelector;
+

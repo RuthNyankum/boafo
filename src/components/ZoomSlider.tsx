@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface ZoomSliderProps {
   zoomLevel: number;
@@ -14,8 +15,14 @@ const ZoomSlider: React.FC<ZoomSliderProps> = ({ zoomLevel, setZoomLevel, adjust
   };
 
   return (
-    <div className="mt-4">
-      <label htmlFor="zoomSlider" className="block text-sm font-medium text-gray-700">
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2 }}
+      className="mb-2"
+    >
+      <label htmlFor="zoomSlider" className="block text-xs font-medium text-gray-700 mb-1">
         Zoom Level: {zoomLevel}%
       </label>
       <input
@@ -25,10 +32,11 @@ const ZoomSlider: React.FC<ZoomSliderProps> = ({ zoomLevel, setZoomLevel, adjust
         max="200"
         value={zoomLevel}
         onChange={handleChange}
-        className="mt-2 w-full"
+        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
       />
-    </div>
+    </motion.div>
   );
 };
 
 export default ZoomSlider;
+
