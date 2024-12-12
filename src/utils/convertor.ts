@@ -9,22 +9,22 @@ const convertor = async (img: string, lang: string): Promise<string> => {
   });
 
   try {
-    alert(`Loading language: ${lang}`);
+    console.log(`Loading language: ${lang}`);
     await worker.loadLanguage(lang);
 
-    alert(`Initializing language: ${lang}`);
+    console.log(`Initializing language: ${lang}`);
     await worker.initialize(lang);
 
-    alert("Starting OCR on image...");
+    console.log("Starting OCR on image...");
     const { data: { text } } = await worker.recognize(img);
     console.log("OCR Result:", text);
 
     return text;
   } catch (error) {
-    alert(`Error in Tesseract.js: ${error}`);
+    console.log(`Error in Tesseract.js: ${error}`);
     throw new Error("Failed to process OCR.");
   } finally {
-    alert("Terminating Tesseract.js worker...");
+    console.log("Terminating Tesseract.js worker...");
     await worker.terminate();
   }
 };

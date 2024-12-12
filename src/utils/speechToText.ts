@@ -1,3 +1,3 @@
 export const speechToText = () => {
-    alert(`Speech to Text under development.`);
+  console.log(`Speech to Text under development.`);
   };

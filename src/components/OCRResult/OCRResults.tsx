@@ -29,9 +29,10 @@ const OCRResult: React.FC<OCRResultProps> = ({
       {isProcessing && (
         <motion.p
           key="processing"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.3 }}
           className="text-xs text-gray-600"
         >
           Processing image... Please wait.
@@ -40,9 +41,9 @@ const OCRResult: React.FC<OCRResultProps> = ({
       {ocrResult && (
         <motion.p
           key="result"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
           transition={{ duration: 0.3 }}
           className="mt-1 text-xs text-gray-700"
         >

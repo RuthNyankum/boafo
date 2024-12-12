@@ -17,12 +17,12 @@ export const captureScreenshot = async (
           resolve();
         } catch (error) {
           console.error("Error during OCR processing:", error);
-          alert("An error occurred during OCR processing.");
+          console.log("An error occurred during OCR processing.");
           reject(error);
         }
       } else {
         console.error("Failed to capture screenshot.");
-        alert("Failed to capture screenshot.");
+        console.log("Failed to capture screenshot.");
         reject(new Error("Screenshot capture failed"));
       }
     });

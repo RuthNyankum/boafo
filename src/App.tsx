@@ -1,6 +1,5 @@
-import './App.css';
+
 import AccessibilityOptions from './components/AccessibilityOptions/AccessibilityOptions';
-// import AccessibilityOptions from './components/AccessibilityOptions';
 
 function App() {
   return (

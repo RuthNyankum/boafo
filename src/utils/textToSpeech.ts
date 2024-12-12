@@ -1,6 +1,6 @@
 export const readAloud = (text: string, language: string = "en-US") => {
     if (!("speechSynthesis" in window)) {
-      alert("Text-to-speech is not supported in this browser.");
+      console.log("Text-to-speech is not supported in this browser.");
       return;
     }
   

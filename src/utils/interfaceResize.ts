@@ -7,7 +7,7 @@ export const interfaceResize = (zoomLevel: number = 120): void => {
         (response) => {
           if (chrome.runtime.lastError) {
             console.error("Runtime error:", chrome.runtime.lastError.message);
-            alert("Failed to resize the page. Please check console logs.");
+            console.log("Failed to resize the page. Please check console logs.");
           } else if (response?.status === 'success') {
             console.log("Resize successful:", response.message);
           } else {

@@ -27,13 +27,19 @@ const AccessibilityOptions: React.FC = () => {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className="p-4 bg-white rounded-lg shadow-lg w-80 mx-auto overflow-hidden"
+      className="p-4 bg-white rounded-lg shadow-lg w-80 overflow-hidden"
     >
-      <OCRResult
-        image={image}
-        isProcessing={isProcessing}
-        ocrResult={ocrResult}
-      />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        <OCRResult
+          image={image}
+          isProcessing={isProcessing}
+          ocrResult={ocrResult}
+        />
+      </motion.div>
 
       <div className="space-y-2">
         {options.map((item, index) => (
@@ -53,7 +59,7 @@ const AccessibilityOptions: React.FC = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
             className="mt-2"
           >
             <ZoomSlider
@@ -65,11 +71,17 @@ const AccessibilityOptions: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <LanguageSelector
-        langOptions={langOptions}
-        selectedLanguage={selectedLanguage}
-        setSelectedLanguage={setSelectedLanguage}
-      />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+      >
+        <LanguageSelector
+          langOptions={langOptions}
+          selectedLanguage={selectedLanguage}
+          setSelectedLanguage={setSelectedLanguage}
+        />
+      </motion.div>
     </motion.div>
   );
 };
