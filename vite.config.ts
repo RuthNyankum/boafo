@@ -25,7 +25,7 @@ export default defineConfig({
         },
         // Workers and other static resources
         {
-          src: 'public/workers/*', // Ensures all files in 'workers' are copied
+          src: 'public/workers/*', 
           dest: 'workers',
         },
       ],

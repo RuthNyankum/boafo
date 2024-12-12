@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface OCRResultProps {
   image: string;
@@ -12,20 +13,45 @@ const OCRResult: React.FC<OCRResultProps> = ({
   ocrResult 
 }) => {
   return (
-    <>
+    <AnimatePresence>
       {image && (
-        <img
+        <motion.img
+          key="image"
           src={image}
           alt="Captured Screenshot"
-          className="mb-6 w-full rounded-md"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.3 }}
+          className="mb-2 w-full rounded-md max-h-32 object-contain"
         />
       )}
-      {isProcessing && <p>Processing image... Please wait.</p>}
-      {ocrResult && (
-        <p className="mt-4 text-gray-700">Extracted Text: {ocrResult}</p>
+      {isProcessing && (
+        <motion.p
+          key="processing"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="text-xs text-gray-600"
+        >
+          Processing image... Please wait.
+        </motion.p>
       )}
-    </>
+      {ocrResult && (
+        <motion.p
+          key="result"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          transition={{ duration: 0.3 }}
+          className="mt-1 text-xs text-gray-700"
+        >
+          Extracted Text: {ocrResult}
+        </motion.p>
+      )}
+    </AnimatePresence>
   );
 };
 
 export default OCRResult;
+
