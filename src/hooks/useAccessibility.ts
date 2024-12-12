@@ -11,6 +11,7 @@ export const useAccessibility = () => {
   const [ocrResult, setOcrResult] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("eng");
+  const [zoomLevel, setZoomLevel] = useState<number>(120);
 
   const toggleSection = (section: number) => {
     setOpenSection(openSection === section ? null : section);
@@ -28,6 +29,10 @@ export const useAccessibility = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+  const adjustZoom = (level: number) => {
+    setZoomLevel(level);
+    interfaceResize(level);
   };
 
   const options: AccessibilityOption[] = [
@@ -47,7 +52,7 @@ export const useAccessibility = () => {
       title: "Physical Disability",
       description: "Resizable interfaces",
       icon: FaWheelchair,
-      action: interfaceResize,
+      action: () => adjustZoom(zoomLevel),
     },
   ];
 
@@ -68,5 +73,8 @@ export const useAccessibility = () => {
     langOptions,
     toggleSection,
     setSelectedLanguage,
+    zoomLevel,
+    setZoomLevel,
+    adjustZoom,
   };
 };
