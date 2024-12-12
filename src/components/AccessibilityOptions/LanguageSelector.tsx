@@ -23,7 +23,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       <select
         id="language"
         value={selectedLanguage}
-        className="bg-gray-100 text-sm rounded-md border-none focus:ring-2 focus:ring-blue-500 p-2"
+        className="bg-gray-100 text-sm rounded-md border-none focus:ring-1 focus:ring-blue-200 p-2"
         onChange={(e) => setSelectedLanguage(e.target.value)}
       >
         {langOptions.map((option, index) => (
