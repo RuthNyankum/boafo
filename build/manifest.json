@@ -8,13 +8,18 @@
     "storage",
     "scripting",
     "tabs",
-    "notifications"
+    "notifications",
+    "tts",
+    "ttsEngine",
+    "audio",
+    "videoCapture"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "index.html"
@@ -22,17 +27,16 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "css": []
     }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "/workers/worker.min.js",
-        "/workers/lang/*",                  
-        "/workers/core/tesseract-core.wasm.js"
-      ],
-      "matches": ["<all_urls>"]
+  "commands": {
+    "toggle-speech": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S"
+      },
+      "description": "Toggle Speech Recognition"
     }
-  ]
+  }
 }

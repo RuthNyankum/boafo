@@ -1,55 +1,17 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
-import path from 'path';
 
 export default defineConfig({
-  plugins: [
-    react(),
-    viteStaticCopy({
-      targets: [
-        // Manifest file
-        {
-          src: 'public/manifest.json',
-          dest: '.',
-        },
-        // Background script
-        {
-          src: 'public/background.js',
-          dest: '.',
-        },
-        // Content script
-        {
-          src: 'public/content.js',
-          dest: '.',
-        },
-        // Workers and other static resources
-        {
-          src: 'public/workers/*', 
-          dest: 'workers',
-        },
-      ],
-    }),
-  ],
   build: {
-    outDir: 'build',
     rollupOptions: {
       input: {
-        main: './index.html',
-        background: path.resolve(__dirname, 'public/background.js'),
-        content: path.resolve(__dirname, 'public/content.js'),
+        background: 'public/background.js', // Background script entry
+        popup: 'src/popup.html', // Popup HTML file entry
       },
       output: {
         entryFileNames: '[name].js',
-        chunkFileNames: '[name].[hash].js',
-        assetFileNames: 'assets/[name].[ext]',
+        chunkFileNames: '[name].js',
+        assetFileNames: '[name].[ext]',
       },
-    },
-    sourcemap: process.env.NODE_ENV === 'development', // Include source maps only in development
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
     },
   },
 });
