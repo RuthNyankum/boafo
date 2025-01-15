@@ -1,52 +1,70 @@
-import { useState } from 'react';
+import { useState, useCallback } from "react";
 import { FaWheelchair, FaEarDeaf, FaEyeLowVision } from "react-icons/fa6";
-import { captureScreenshot } from '../utils/screenshot';
-import { readAloud } from '../utils/textToSpeech';
-import { AccessibilityOption, LanguageOption } from '../types/accessibility';
-import { interfaceResize } from '../utils/interfaceResize';
+import { AccessibilityOption, LanguageOption } from "../types/accessibility";
+import { interfaceResize } from "../utils/interfaceResize";
+import { readAloud } from "../utils/textToSpeech";
+import { speechToText } from "../utils/speechToText";
 
 export const useAccessibility = () => {
   const [openSection, setOpenSection] = useState<number | null>(null);
-  const [image, setImage] = useState<string>("");
-  const [ocrResult, setOcrResult] = useState<string>("");
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("eng");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("en-US");
   const [zoomLevel, setZoomLevel] = useState<number>(120);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   const toggleSection = (section: number) => {
     setOpenSection(openSection === section ? null : section);
   };
 
-  const handleScreenshotOCR = async () => {
-    setIsProcessing(true);
+  const adjustZoom = useCallback((level: number) => {
+    setZoomLevel(level);
+    interfaceResize(level);
+  }, []);
+
+  const handleTextToSpeech = async () => {
+    if (isProcessing) return;
+
     try {
-      await captureScreenshot(
-        selectedLanguage, 
-        setImage, 
-        setOcrResult, 
-        (text) => readAloud(text, selectedLanguage === "eng" ? "en-US" : selectedLanguage)
-      );
+      setIsProcessing(true);
+      const response = await readAloud("auto", selectedLanguage);
+
+      if (response.status === "error") {
+        console.error("Text-to-speech error:", response.message);
+      }
+    } catch (error) {
+      console.error("Text-to-speech error:", error);
     } finally {
       setIsProcessing(false);
     }
   };
-  const adjustZoom = (level: number) => {
-    setZoomLevel(level);
-    interfaceResize(level);
+
+  const handleSpeechToText = async () => {
+    if (isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+      const response = await speechToText();
+      if (response.status === "error") {
+        console.error("Speech-to-text error:", response.message);
+      }
+    } catch (error) {
+      console.error("Speech-to-text error:", error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const options: AccessibilityOption[] = [
     {
       title: "Visual Impairment",
-      description: "Capture image, extract text, and read aloud",
+      description: "Extract and read text from the page aloud",
       icon: FaEyeLowVision,
-      action: handleScreenshotOCR,
+      action: handleTextToSpeech,
     },
     {
       title: "Hearing Impairment",
-      description: "Speech-to-text feature",
+      description: "Convert audio/video speech to text",
       icon: FaEarDeaf,
-      action: () => alert("Speech-to-text is currently under development."),
+      action: handleSpeechToText,
     },
     {
       title: "Physical Disability",
@@ -57,17 +75,14 @@ export const useAccessibility = () => {
   ];
 
   const langOptions: LanguageOption[] = [
-    { lang: "English", value: "eng" },
+    { lang: "English", value: "en-US" },
     { lang: "Twi", value: "twi" },
     { lang: "Ga", value: "ga" },
-    { lang: "Fafra", value: "fafra" },
+    { lang: "Frafra", value: "fafra" },
   ];
 
   return {
     openSection,
-    image,
-    ocrResult,
-    isProcessing,
     selectedLanguage,
     options,
     langOptions,
@@ -76,5 +91,6 @@ export const useAccessibility = () => {
     zoomLevel,
     setZoomLevel,
     adjustZoom,
+    isProcessing,
   };
 };
