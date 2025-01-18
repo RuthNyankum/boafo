@@ -19,8 +19,10 @@ const AccessibilityOptions: React.FC = () => {
     adjustZoom,
     isProcessing,
     isPaused,
+    isStopped,
     handleStopReading,
     handlePauseResume,
+    handleTextToSpeech,
   } = useAccessibility();
 
   return (
@@ -54,39 +56,41 @@ const AccessibilityOptions: React.FC = () => {
             className="mt-2 space-y-2"
           >
             <div className="flex space-x-2">
-              {/* Stop Button */}
               <button
-                onClick={handleStopReading}
+                onClick={isStopped ? handleTextToSpeech : handleStopReading}
                 disabled={isProcessing}
-                className="flex-1 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex-1 py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center space-x-2 ${
+                  isStopped ? "bg-green-500 hover:bg-green-600 text-white" : "bg-red-500 hover:bg-red-600 text-white"
+                }`}
               >
-                <FaStop />
-                <span>Stop</span>
+                {isStopped ? <FaPlay /> : <FaStop />}
+                <span>{isStopped ? "Start" : "Stop"}</span>
               </button>
 
-              {/* Pause/Resume Button */}
-              <button
-                onClick={handlePauseResume}
-                disabled={isProcessing}
-                className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isPaused ? <FaPlay /> : <FaPause />}
-                <span>{isPaused ? "Resume" : "Pause"}</span>
-              </button>
+              {!isStopped && (
+                <button
+                  onClick={handlePauseResume}
+                  disabled={isProcessing}
+                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50"
+                >
+                  {isPaused ? <FaPlay /> : <FaPause />}
+                  <span>{isPaused ? "Resume" : "Pause"}</span>
+                </button>
+              )}
             </div>
 
-            {/* Status Indicator */}
             <div className="text-xs text-gray-600 text-center mt-2">
               {isProcessing
                 ? "Processing..."
+                : isStopped
+                ? "Text-to-speech stopped"
                 : isPaused
-                ? "Reading paused"
-                : "Click buttons to control reading"}
+                ? "Paused"
+                : "Running"}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
       {/* Controls for Physical Disability */}
       {openSection === options.findIndex((opt) => opt.title === "Physical Disability") && (
         <motion.div

@@ -11,7 +11,7 @@ export const useAccessibility = () => {
   const [zoomLevel, setZoomLevel] = useState<number>(120);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
-
+  const [isStopped, setIsStopped] = useState<boolean>(true);
   const toggleSection = (section: number) => {
     setOpenSection(openSection === section ? null : section);
   };
@@ -22,10 +22,12 @@ export const useAccessibility = () => {
   }, []);
 
   const handleTextToSpeech = async () => {
-    if (isProcessing) return;
+    if (isProcessing || !isStopped) return; // Prevent restarting if already running
 
     try {
       setIsProcessing(true);
+      setIsStopped(false); // TTS has started
+      setIsPaused(false); // Ensure not paused
       const response = await readAloud({ mode: "auto", language: selectedLanguage });
 
       if (response.status === "error") {
@@ -42,7 +44,8 @@ export const useAccessibility = () => {
     try {
       const response = await stopReading();
       if (response.status === "success") {
-        setIsPaused(false);
+        setIsStopped(true); // Mark as stopped
+        setIsPaused(false); // Reset pause state
       }
     } catch (error) {
       console.error("Error stopping reading:", error);
@@ -50,6 +53,7 @@ export const useAccessibility = () => {
   };
 
   const handlePauseResume = async () => {
+    if (isStopped) return; // Don't allow pause/resume if TTS is stopped
     try {
       if (isPaused) {
         const response = await resumeReading();
@@ -123,7 +127,9 @@ export const useAccessibility = () => {
     adjustZoom,
     isProcessing,
     isPaused,
+    isStopped,
     handleStopReading,
     handlePauseResume,
+    handleTextToSpeech,
   };
 };
