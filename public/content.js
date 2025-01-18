@@ -14,7 +14,7 @@ function cleanupHighlights() {
   highlightedElements = [];
 }
 
-// Function to highlight text
+// Function to highlight text and scroll to it
 function highlightText(text, container) {
   cleanupHighlights();
 
@@ -27,22 +27,32 @@ function highlightText(text, container) {
 
   let node;
   while ((node = walk.nextNode())) {
-    const index = node.textContent.indexOf(text);
+    const index = node.textContent.toLowerCase().indexOf(text.toLowerCase());
     if (index >= 0) {
       const span = document.createElement("span");
       span.style.backgroundColor = "yellow";
-      span.textContent = text;
+      span.style.color = "black";
+      span.style.fontWeight = "bold";
+      span.textContent = node.textContent.substring(index, index + text.length);
 
-      const range = document.createRange();
-      range.setStart(node, index);
-      range.setEnd(node, index + text.length);
-      range.surroundContents(span);
+      const beforeText = document.createTextNode(node.textContent.substring(0, index));
+      const afterText = document.createTextNode(node.textContent.substring(index + text.length));
 
-      highlightedElements.push(span);
+      const parent = node.parentNode;
+      if (parent) {
+        parent.replaceChild(afterText, node);
+        parent.insertBefore(span, afterText);
+        parent.insertBefore(beforeText, span);
+        highlightedElements.push(span);
+
+        // Scroll into view with smooth animation
+        span.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       break;
     }
   }
 }
+
 
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -61,19 +71,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       let currentSentenceIndex = 0;
 
       utterance.onboundary = (event) => {
-        if (event.name === "sentence") {
-          const currentSentence = sentences[currentSentenceIndex];
-          if (currentSentence) {
-            highlightText(currentSentence.trim());
-            currentSentenceIndex++;
+        if (event.name === "word") {  // Change from "sentence" to "word" for better highlighting
+          const currentText = textToRead.substring(event.charIndex).split(/\s+/)[0]; // Get current word
+          if (currentText) {
+            highlightText(currentText.trim());
           }
         }
       };
+      
 
       utterance.onend = () => {
-        cleanupHighlights();
+        setTimeout(cleanupHighlights, 500); // Delay cleanup for smooth transition
         sendResponse({ status: "success", message: "Reading completed" });
       };
+      
 
       utterance.onerror = (error) => {
         cleanupHighlights();
