@@ -1,16 +1,150 @@
 let synth = window.speechSynthesis;
 let utterance = null;
+let highlightedElements = [];
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Handle resize page action
-  if (message.action === "resizePage") {
+// Helper function to clean up highlights
+function cleanupHighlights() {
+  highlightedElements.forEach(el => {
+    if (el && el.parentNode) {
+      const parent = el.parentNode;
+      parent.replaceChild(document.createTextNode(el.textContent), el);
+      parent.normalize();
+    }
+  });
+  highlightedElements = [];
+}
+
+// Function to highlight text
+function highlightText(text, container) {
+  cleanupHighlights();
+
+  const walk = document.createTreeWalker(
+    container || document.body,
+    NodeFilter.SHOW_TEXT,
+    null,
+    false
+  );
+
+  let node;
+  while ((node = walk.nextNode())) {
+    const index = node.textContent.indexOf(text);
+    if (index >= 0) {
+      const span = document.createElement("span");
+      span.style.backgroundColor = "yellow";
+      span.textContent = text;
+
+      const range = document.createRange();
+      range.setStart(node, index);
+      range.setEnd(node, index + text.length);
+      range.surroundContents(span);
+
+      highlightedElements.push(span);
+      break;
+    }
+  }
+}
+
+// Listen for messages from the background script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Handle text-to-speech functionality
+  if (request.action === "readText") {
     try {
-      const zoomLevel = Math.max(0.1, Math.min(message.zoomLevel / 100, 5)); // Constrain zoom level
+      if (synth.speaking) synth.cancel();
+
+      const textToRead = request.text || getSelectedText() || document.body.textContent;
+      utterance = new SpeechSynthesisUtterance(textToRead);
+      utterance.lang = request.lang || "en-US";
+      utterance.rate = request.rate || 1;
+      utterance.pitch = request.pitch || 1;
+
+      const sentences = textToRead.match(/[^.!?]+[.!?]+/g) || [textToRead];
+      let currentSentenceIndex = 0;
+
+      utterance.onboundary = (event) => {
+        if (event.name === "sentence") {
+          const currentSentence = sentences[currentSentenceIndex];
+          if (currentSentence) {
+            highlightText(currentSentence.trim());
+            currentSentenceIndex++;
+          }
+        }
+      };
+
+      utterance.onend = () => {
+        cleanupHighlights();
+        sendResponse({ status: "success", message: "Reading completed" });
+      };
+
+      utterance.onerror = (error) => {
+        cleanupHighlights();
+        console.error("Speech synthesis error:", error);
+        sendResponse({ status: "error", message: error.message });
+      };
+
+      synth.speak(utterance);
+      sendResponse({ status: "success", message: "Started reading" });
+    } catch (error) {
+      console.error("Error in readText:", error);
+      sendResponse({ status: "error", message: error.message });
+    }
+    return true;
+  }
+
+  if (request.action === "stopReading") {
+    try {
+      if (synth.speaking) {
+        synth.cancel();
+        cleanupHighlights();
+        sendResponse({ status: "success", message: "Speech stopped" });
+      } else {
+        sendResponse({ status: "info", message: "No active speech to stop" });
+      }
+    } catch (error) {
+      console.error("Error stopping speech:", error);
+      sendResponse({ status: "error", message: error.message });
+    }
+    return true;
+  }
+
+  if (request.action === "pauseReading") {
+    try {
+      if (synth.speaking && !synth.paused) {
+        synth.pause();
+        sendResponse({ status: "success", message: "Speech paused" });
+      } else {
+        sendResponse({ status: "info", message: "No active speech to pause" });
+      }
+    } catch (error) {
+      console.error("Error pausing speech:", error);
+      sendResponse({ status: "error", message: error.message });
+    }
+    return true;
+  }
+
+  if (request.action === "resumeReading") {
+    try {
+      if (synth.paused) {
+        synth.resume();
+        sendResponse({ status: "success", message: "Speech resumed" });
+      } else {
+        sendResponse({ status: "info", message: "No paused speech to resume" });
+      }
+    } catch (error) {
+      console.error("Error resuming speech:", error);
+      sendResponse({ status: "error", message: error.message });
+    }
+    return true;
+  }
+
+  // Handle resize functionality
+  if (request.action === "resizePage") {
+    try {
+      const zoomLevel = Math.max(0.1, Math.min(request.zoomLevel / 100, 5));
       if (document.body) {
         document.body.style.transform = `scale(${zoomLevel})`;
         document.body.style.transformOrigin = "top left";
         document.body.style.width = `${100 / zoomLevel}%`;
-        sendResponse({ status: "success", message: `Resized to ${message.zoomLevel}%` });
+        sendResponse({ status: "success", message: `Resized to ${request.zoomLevel}%` });
       } else {
         sendResponse({ status: "error", message: "Document body not found" });
       }
@@ -18,152 +152,53 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.error("Error resizing page:", error);
       sendResponse({ status: "error", message: error.message });
     }
+    return true;
   }
 
-  // Handle text extraction
-  if (message.action === "extractText") {
+  // Handle speech-to-text functionality
+  if (request.action === "startSpeechRecognition") {
     try {
-      const textContent = document.body.innerText;
-      sendResponse({ status: "success", text: textContent });
+      if (typeof webkitSpeechRecognition !== "undefined") {
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onresult = (event) => {
+          const transcript = Array.from(event.results)
+            .map((result) => result[0].transcript)
+            .join("");
+
+          chrome.runtime.sendMessage({
+            action: "updateTranscript",
+            transcript,
+          });
+        };
+
+        recognition.onerror = (error) => {
+          console.error("Speech recognition error:", error);
+          sendResponse({ status: "error", message: error.message });
+        };
+
+        recognition.start();
+        sendResponse({ status: "success", message: "Speech recognition started" });
+      } else {
+        throw new Error("Speech recognition not supported in this browser");
+      }
     } catch (error) {
-      console.error("Error extracting text:", error);
+      console.error("Error starting speech recognition:", error);
       sendResponse({ status: "error", message: error.message });
     }
+    return true;
   }
-  if (message.action === "readText") {
-    const text = message.text;
-    const lang = message.lang || "en-US";
+});
 
-    // Cancel any ongoing speech synthesis
-    if (synth.speaking) {
-      synth.cancel();
-    }
+// Function to get selected text
+function getSelectedText() {
+  return window.getSelection().toString();
+}
 
-    // Highlight the text being read
-    const textElement = document.body.querySelector(`[data-read-text="true"]`);
-    if (textElement) textElement.removeAttribute("data-read-text");
-
-    const range = document.createRange();
-    const selection = window.getSelection();
-
-    const startNode = document.body; // Update this to target a specific container if needed
-    const textContent = startNode.textContent || "";
-    const startIndex = textContent.indexOf(text);
-
-    if (startIndex !== -1) {
-      range.setStart(startNode.firstChild, startIndex);
-      range.setEnd(startNode.firstChild, startIndex + text.length);
-      selection.removeAllRanges();
-      selection.addRange(range);
-
-      // Add attribute to identify highlighted text
-      const highlightSpan = document.createElement("span");
-      highlightSpan.style.backgroundColor = "yellow";
-      highlightSpan.dataset.readText = "true";
-      range.surroundContents(highlightSpan);
-    }
-
-    // Create and speak the utterance
-    utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-
-    utterance.onend = () => {
-      selection.removeAllRanges();
-      if (highlightSpan) highlightSpan.remove();
-      sendResponse({ status: "success", message: "Reading completed." });
-    };
-
-    utterance.onerror = (error) => {
-      console.error("Error in speech synthesis:", error);
-      sendResponse({ status: "error", message: error.message });
-    };
-
-    synth.speak(utterance);
-    return true; // Required for async response
-  }
-
-  if (message.action === "stopReading") {
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-      sendResponse({ status: "success", message: "Speech stopped successfully." });
-    } else {
-      sendResponse({ status: "error", message: "No speech synthesis to stop." });
-    }
-  }
-
-  // Handle Spacebar navigation
-  if (message.action === "setupSpaceNavigation") {
-    let currentElement = null;
-    let elements = [];
-
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && !e.repeat) {
-        e.preventDefault();
-        if (!elements.length) {
-          elements = Array.from(document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, article, section'));
-        }
-        if (!currentElement) {
-          currentElement = 0;
-        } else {
-          currentElement = (currentElement + 1) % elements.length;
-        }
-        elements[currentElement].scrollIntoView({ behavior: 'smooth' });
-
-        // Highlight current element
-        elements.forEach(el => el.style.backgroundColor = '');
-        elements[currentElement].style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
-
-        // Send text to be read
-        chrome.runtime.sendMessage({
-          action: "readText",
-          text: elements[currentElement].innerText
-        });
-      }
-    });
-
-    sendResponse({ status: "success", message: "Space navigation enabled" });
-  }
-
-  // Handle text highlighting
-  if (message.action === "highlightText") {
-    const highlightClass = "highlighted-text";
-
-    // Remove previous highlights
-    document.querySelectorAll(`.${highlightClass}`).forEach((el) => {
-      el.classList.remove(highlightClass);
-    });
-
-    const textToHighlight = message.text;
-    const elements = document.body.querySelectorAll("*:not(script):not(style)");
-
-    elements.forEach((el) => {
-      if (el.textContent.includes(textToHighlight)) {
-        el.innerHTML = el.innerHTML.replace(
-          textToHighlight,
-          `<span class="${highlightClass}">${textToHighlight}</span>`
-        );
-      }
-    });
-
-    // Add a basic style for highlighting
-    const style = document.createElement("style");
-    style.innerHTML = `
-      .highlighted-text {
-        background-color: yellow;
-        font-weight: bold;
-      }
-    `;
-    document.head.appendChild(style);
-
-    sendResponse({ status: "success", message: "Text highlighted" });
-  }
-
-  // Handle getting tags
-  if (message.action === "getTags") {
-    const elements = Array.from(document.querySelectorAll(message.tagName || "p"));
-    const tags = elements.map((el) => el.textContent.trim()).filter((text) => text);
-    sendResponse({ tags });
-  }
-
-  return true; // Required for async response
+// Cleanup on page unload
+window.addEventListener("unload", () => {
+  if (synth.speaking) synth.cancel();
+  cleanupHighlights();
 });

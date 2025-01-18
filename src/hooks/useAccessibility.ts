@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { FaWheelchair, FaEarDeaf, FaEyeLowVision } from "react-icons/fa6";
+import { FaWheelchair, FaEarDeaf, FaEyeLowVision, FaPlay } from "react-icons/fa6";
 import { pauseReading, readAloud, resumeReading, stopReading } from "../utils/textToSpeech";
 import { speechToText } from "../utils/speechToText";
 import { AccessibilityOption, LanguageOption } from "../types/accessibility";
@@ -12,6 +12,7 @@ export const useAccessibility = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [isStopped, setIsStopped] = useState<boolean>(true);
+
   const toggleSection = (section: number) => {
     setOpenSection(openSection === section ? null : section);
   };
@@ -21,7 +22,7 @@ export const useAccessibility = () => {
     interfaceResize(level);
   }, []);
 
-  const handleTextToSpeech = async () => {
+ const handleTextToSpeech = async () => {
     if (isProcessing || !isStopped) return; // Prevent restarting if already running
 
     try {
@@ -39,7 +40,6 @@ export const useAccessibility = () => {
       setIsProcessing(false);
     }
   };
-
   const handleStopReading = async () => {
     try {
       const response = await stopReading();
@@ -54,6 +54,7 @@ export const useAccessibility = () => {
 
   const handlePauseResume = async () => {
     if (isStopped) return; // Don't allow pause/resume if TTS is stopped
+
     try {
       if (isPaused) {
         const response = await resumeReading();
@@ -91,7 +92,7 @@ export const useAccessibility = () => {
     {
       title: "Visual Impairment",
       description: "Extract and read text from the page aloud",
-      icon: FaEyeLowVision,
+      icon: isStopped ? FaPlay : FaEyeLowVision,
       action: handleTextToSpeech,
     },
     {
