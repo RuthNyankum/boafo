@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { FaWheelchair, FaEarDeaf, FaEyeLowVision, FaPlay } from "react-icons/fa6";
+import { FaWheelchair, FaEarDeaf, FaEyeLowVision } from "react-icons/fa6";
 import { pauseReading, readAloud, resumeReading, stopReading } from "../utils/textToSpeech";
 import { speechToText } from "../utils/speechToText";
 import { AccessibilityOption, LanguageOption } from "../types/accessibility";
@@ -92,7 +92,7 @@ export const useAccessibility = () => {
     {
       title: "Visual Impairment",
       description: "Extract and read text from the page aloud",
-      icon: isStopped ? FaPlay : FaEyeLowVision,
+      icon: FaEyeLowVision,
       action: handleTextToSpeech,
     },
     {
