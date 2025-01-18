@@ -52,6 +52,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Required for async response
   }
 
+  document.getElementById("pauseButton").addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "pauseReading" }, (response) => {
+      console.log(response.message);
+    });
+  });
+  
+  document.getElementById("resumeButton").addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "resumeReading" }, (response) => {
+      console.log(response.message);
+    });
+  });
+  
   // Stop speech
   if (request.action === "stopReading") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

@@ -22,3 +22,15 @@ export interface SpeechToTextResponse {
   status: 'success' | 'error';
   message: string;
 }
+export interface TTSResponse {
+  status: 'success' | 'error' | 'info';
+  message: string;
+}
+
+export interface TTSConfig {
+  mode?: 'auto' | 'selection';
+  language?: string;
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+}
