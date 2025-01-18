@@ -4,7 +4,7 @@ import AccessibilityOptionItem from "./AccessibilityOptionItems";
 import LanguageSelector from "./LanguageSelector";
 import ZoomSlider from "../ZoomSlider";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaStop } from "react-icons/fa";
+import { FaStop, FaPause, FaPlay } from "react-icons/fa";
 
 const AccessibilityOptions: React.FC = () => {
   const {
@@ -18,17 +18,10 @@ const AccessibilityOptions: React.FC = () => {
     setZoomLevel,
     adjustZoom,
     isProcessing,
+    isPaused,
+    handleStopReading,
+    handlePauseResume,
   } = useAccessibility();
-
-  const stopReading = () => {
-    chrome.runtime.sendMessage({ action: "stopReading" }, (response) => {
-      if (response.status === "success") {
-        console.log("Reading stopped.");
-      } else {
-        console.error(response.message);
-      }
-    });
-  };
 
   return (
     <motion.div
@@ -50,6 +43,7 @@ const AccessibilityOptions: React.FC = () => {
         ))}
       </div>
 
+      {/* Controls for Visual Impairment */}
       <AnimatePresence>
         {openSection === options.findIndex((opt) => opt.title === "Visual Impairment") && (
           <motion.div
@@ -57,36 +51,60 @@ const AccessibilityOptions: React.FC = () => {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="mt-2"
+            className="mt-2 space-y-2"
           >
-            <button
-              onClick={stopReading}
-              disabled={isProcessing}
-              className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors duration-200 flex items-center justify-center space-x-2"
-            >
-              <FaStop />
-              <span>Stop Reading</span>
-            </button>
-          </motion.div>
-        )}
+            <div className="flex space-x-2">
+              {/* Stop Button */}
+              <button
+                onClick={handleStopReading}
+                disabled={isProcessing}
+                className="flex-1 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FaStop />
+                <span>Stop</span>
+              </button>
 
-        {openSection === options.findIndex((opt) => opt.title === "Physical Disability") && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="mt-2"
-          >
-            <ZoomSlider
-              zoomLevel={zoomLevel}
-              setZoomLevel={setZoomLevel}
-              adjustZoom={adjustZoom}
-            />
+              {/* Pause/Resume Button */}
+              <button
+                onClick={handlePauseResume}
+                disabled={isProcessing}
+                className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPaused ? <FaPlay /> : <FaPause />}
+                <span>{isPaused ? "Resume" : "Pause"}</span>
+              </button>
+            </div>
+
+            {/* Status Indicator */}
+            <div className="text-xs text-gray-600 text-center mt-2">
+              {isProcessing
+                ? "Processing..."
+                : isPaused
+                ? "Reading paused"
+                : "Click buttons to control reading"}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Controls for Physical Disability */}
+      {openSection === options.findIndex((opt) => opt.title === "Physical Disability") && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="mt-2"
+        >
+          <ZoomSlider
+            zoomLevel={zoomLevel}
+            setZoomLevel={setZoomLevel}
+            adjustZoom={adjustZoom}
+          />
+        </motion.div>
+      )}
+
+      {/* Language Selector */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
