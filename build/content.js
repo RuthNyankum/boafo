@@ -15,28 +15,25 @@ function cleanupHighlights() {
 }
 
 // Function to highlight text and scroll to it
-function highlightText(text, container) {
+function highlightText(text) {
   cleanupHighlights();
 
-  const walk = document.createTreeWalker(
-    container || document.body,
-    NodeFilter.SHOW_TEXT,
-    null,
-    false
-  );
-
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
   let node;
+  let found = false;
+
   while ((node = walk.nextNode())) {
-    const index = node.textContent.toLowerCase().indexOf(text.toLowerCase());
-    if (index >= 0) {
+    const regex = new RegExp(`\\b${text}\\b`, "i"); // Match exact word
+    const match = node.textContent.match(regex);
+    if (match) {
       const span = document.createElement("span");
       span.style.backgroundColor = "yellow";
       span.style.color = "black";
       span.style.fontWeight = "bold";
-      span.textContent = node.textContent.substring(index, index + text.length);
+      span.textContent = match[0];
 
-      const beforeText = document.createTextNode(node.textContent.substring(0, index));
-      const afterText = document.createTextNode(node.textContent.substring(index + text.length));
+      const beforeText = document.createTextNode(node.textContent.substring(0, match.index));
+      const afterText = document.createTextNode(node.textContent.substring(match.index + match[0].length));
 
       const parent = node.parentNode;
       if (parent) {
@@ -45,13 +42,15 @@ function highlightText(text, container) {
         parent.insertBefore(beforeText, span);
         highlightedElements.push(span);
 
-        // Scroll into view with smooth animation
+        // Scroll smoothly to the highlighted word
         span.scrollIntoView({ behavior: "smooth", block: "center" });
+        found = true;
       }
-      break;
     }
+    if (found) break; // Stop at the first match to avoid wrong highlights
   }
 }
+
 
 
 // Listen for messages from the background script
@@ -71,13 +70,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       let currentSentenceIndex = 0;
 
       utterance.onboundary = (event) => {
-        if (event.name === "word") {  // Change from "sentence" to "word" for better highlighting
-          const currentText = textToRead.substring(event.charIndex).split(/\s+/)[0]; // Get current word
-          if (currentText) {
-            highlightText(currentText.trim());
+        if (event.name === "word" || event.name === "boundary") {
+          const charIndex = event.charIndex; // Get exact character position
+          const words = textToRead.substring(charIndex).match(/\b\w+\b/g); // Extract word at charIndex
+          if (words && words.length > 0) {
+            highlightText(words[0]); // Highlight the exact spoken word
           }
         }
       };
+      
       
 
       utterance.onend = () => {
