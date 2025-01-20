@@ -9,7 +9,7 @@ export interface AccessibilityOption {
 
 export interface LanguageOption {
   lang: string;
-  value: string;
+  value: "en-US" | "ak" | "gaa" | "dag" | "ee";
 }
 
 export interface TextToSpeechResponse {

@@ -1,6 +1,11 @@
 import { useState, useCallback } from "react";
 import { FaWheelchair, FaEarDeaf, FaEyeLowVision } from "react-icons/fa6";
-import { pauseReading, readAloud, resumeReading, stopReading } from "../utils/textToSpeech";
+import {
+  pauseReading,
+  readAloud,
+  resumeReading,
+  stopReading,
+} from "../utils/textToSpeech";
 import { speechToText } from "../utils/speechToText";
 import { AccessibilityOption, LanguageOption } from "../types/accessibility";
 import { interfaceResize } from "../utils/interfaceResize";
@@ -22,14 +27,17 @@ export const useAccessibility = () => {
     interfaceResize(level);
   }, []);
 
- const handleTextToSpeech = async () => {
+  const handleTextToSpeech = async () => {
     if (isProcessing || !isStopped) return; // Prevent restarting if already running
 
     try {
       setIsProcessing(true);
       setIsStopped(false); // TTS has started
       setIsPaused(false); // Ensure not paused
-      const response = await readAloud({ mode: "auto", language: selectedLanguage });
+      const response = await readAloud({
+        mode: "auto",
+        language: selectedLanguage,
+      });
 
       if (response.status === "error") {
         console.error("Text-to-speech error:", response.message);
@@ -111,9 +119,10 @@ export const useAccessibility = () => {
 
   const langOptions: LanguageOption[] = [
     { lang: "English", value: "en-US" },
-    { lang: "Twi", value: "twi" },
-    { lang: "Ga", value: "ga" },
-    { lang: "Frafra", value: "fafra" },
+    { lang: "Twi", value: "ak" },
+    { lang: "Ga", value: "gaa" },
+    { lang: "Frafra", value: "dag" },
+    { lang: "Ewe", value: "ee" },
   ];
 
   return {
