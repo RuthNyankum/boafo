@@ -11,8 +11,7 @@
     "notifications",
     "tts",
     "ttsEngine",
-    "audio",
-    "videoCapture"
+    "microphone"
   ],
   "host_permissions": [
     "<all_urls>"

@@ -1,6 +1,8 @@
 let synth = window.speechSynthesis;
 let utterance = null;
 let highlightedElements = [];
+let recognition = null; // Add recognition object
+let isRecognitionPaused = false; // State for recognizing pause
 
 // Helper function to clean up highlights
 function cleanupHighlights() {
@@ -51,8 +53,6 @@ function highlightText(text) {
   }
 }
 
-
-
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Handle text-to-speech functionality
@@ -78,14 +78,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           }
         }
       };
-      
-      
 
       utterance.onend = () => {
         setTimeout(cleanupHighlights, 500); // Delay cleanup for smooth transition
         sendResponse({ status: "success", message: "Reading completed" });
       };
-      
 
       utterance.onerror = (error) => {
         cleanupHighlights();
@@ -171,34 +168,61 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "startSpeechRecognition") {
     try {
       if (typeof webkitSpeechRecognition !== "undefined") {
-        const recognition = new webkitSpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
+        if (!recognition) {
+          recognition = new webkitSpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
 
-        recognition.onresult = (event) => {
-          const transcript = Array.from(event.results)
-            .map((result) => result[0].transcript)
-            .join("");
+          recognition.onresult = (event) => {
+            const transcript = Array.from(event.results)
+              .map((result) => result[0].transcript)
+              .join("");
 
-          chrome.runtime.sendMessage({
-            action: "updateTranscript",
-            transcript,
-          });
-        };
+            chrome.runtime.sendMessage({
+              action: "updateTranscript",
+              transcript,
+            });
+          };
 
-        recognition.onerror = (error) => {
-          console.error("Speech recognition error:", error);
-          sendResponse({ status: "error", message: error.message });
-        };
+          recognition.onerror = (error) => {
+            console.error("Speech recognition error:", error);
+            sendResponse({ status: "error", message: error.message });
+          };
 
-        recognition.start();
-        sendResponse({ status: "success", message: "Speech recognition started" });
+          recognition.start();
+          sendResponse({ status: "success", message: "Speech recognition started" });
+        } else {
+          sendResponse({ status: "info", message: "Speech recognition already active" });
+        }
       } else {
         throw new Error("Speech recognition not supported in this browser");
       }
     } catch (error) {
       console.error("Error starting speech recognition:", error);
       sendResponse({ status: "error", message: error.message });
+    }
+    return true;
+  }
+
+  // Handle pause/resume speech recognition
+  if (request.action === "pauseSpeechRecognition") {
+    if (recognition && !isRecognitionPaused) {
+      recognition.stop();
+      isRecognitionPaused = true;
+      sendResponse({ status: "success", message: "Speech recognition paused" });
+    } else {
+      sendResponse({ status: "info", message: "Speech recognition is already paused" });
+    }
+    return true;
+  }
+
+  if (request.action === "resumeSpeechRecognition") {
+    if (recognition && isRecognitionPaused) {
+      recognition.start();
+      isRecognitionPaused = false;
+      sendResponse({ status: "success", message: "Speech recognition resumed" });
+    } else {
+      sendResponse({ status: "info", message: "Speech recognition is already active" });
     }
     return true;
   }

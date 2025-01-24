@@ -12,9 +12,11 @@
     "extension:watch": "vite build --watch && cp -R dist/* build/"
   },
   "dependencies": {
+    "@google-cloud/speech": "^6.7.0",
     "@google-cloud/vision": "^4.3.2",
     "@types/dom-speech-recognition": "^0.0.4",
     "@types/lodash": "^4.17.13",
+    "buffer": "^6.0.3",
     "framer-motion": "^11.14.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.471.1",
