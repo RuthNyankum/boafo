@@ -1,34 +1,54 @@
-import { SpeechToTextResponse } from "../types/accessibility";
+import { TranscriptionOptions, TranscriptionResponse } from "../types/accessibility";
 
-export const speechToText = async (): Promise<SpeechToTextResponse> => {
+export const startTranscription = async (
+  options: TranscriptionOptions = {}
+): Promise<TranscriptionResponse> => {
   try {
-    const response = await chrome.runtime.sendMessage({ action: "monitorMedia" }) as SpeechToTextResponse;
-
-    if (response?.status === "success") {
-      const indicator = document.createElement("div");
-      indicator.id = "speech-indicator";
-      indicator.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 10px;
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        border-radius: 5px;
-        z-index: 10000;
-      `;
-      indicator.textContent = "🎤 Converting Speech to Text...";
-      document.body.appendChild(indicator);
-
-      indicator.onclick = async () => {
-        await chrome.runtime.sendMessage({ action: "stopMediaMonitoring" });
-        indicator.remove();
+    const response = await chrome.runtime.sendMessage({ 
+      type: 'START_TRANSCRIPTION',
+      language: options.language || 'en-US'
+    });
+    
+    if (response?.status === 'success') {
+      return {
+        status: 'success',
+        message: 'Speech recognition started'
+      };
+    } else {
+      return {
+        status: 'error',
+        message: response?.message || 'Failed to start speech recognition'
       };
     }
-
-    return response;
   } catch (error) {
-    console.error("Error in speechToText:", error);
-    return { status: "error", message: error instanceof Error ? error.message : "An unknown error occurred" };
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
+};
+
+export const stopTranscription = async (): Promise<TranscriptionResponse> => {
+  try {
+    const response = await chrome.runtime.sendMessage({ 
+      type: 'STOP_TRANSCRIPTION'
+    });
+    
+    if (response?.status === 'success') {
+      return {
+        status: 'success',
+        message: 'Speech recognition stopped'
+      };
+    } else {
+      return {
+        status: 'error',
+        message: response?.message || 'Failed to stop speech recognition'
+      };
+    }
+  } catch (error) {
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
   }
 };

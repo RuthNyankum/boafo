@@ -11,17 +11,20 @@ export interface LanguageOption {
   lang: string;
   value: "en-US" | "ak" | "gaa" | "dag" | "ee";
 }
+export interface TranscriptionResponse {
+  status: 'success' | 'error';
+  message: string;
+}
 
+export interface TranscriptionOptions {
+  language?: string;
+}
 export interface TextToSpeechResponse {
   status: 'success' | 'error';
   message: string;
   text?: string;
 }
 
-export interface SpeechToTextResponse {
-  status: 'success' | 'error';
-  message: string;
-}
 export interface TTSResponse {
   status: 'success' | 'error' | 'info';
   message: string;

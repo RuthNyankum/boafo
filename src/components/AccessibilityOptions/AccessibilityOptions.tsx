@@ -4,7 +4,7 @@ import AccessibilityOptionItem from "./AccessibilityOptionItems";
 import LanguageSelector from "./LanguageSelector";
 import ZoomSlider from "../ZoomSlider";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaStop, FaPause, FaPlay } from "react-icons/fa";
+import { FaStop, FaPause, FaPlay, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 
 const AccessibilityOptions: React.FC = () => {
   const {
@@ -20,9 +20,12 @@ const AccessibilityOptions: React.FC = () => {
     isProcessing,
     isPaused,
     isStopped,
+    isTranscribing,
     handleStopReading,
     handlePauseResume,
     handleTextToSpeech,
+    handleSpeechToText,
+    handleStopTranscription,
   } = useAccessibility();
 
   return (
@@ -91,6 +94,41 @@ const AccessibilityOptions: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Controls for Hearing Impairment */}
+      <AnimatePresence>
+        {openSection === options.findIndex((opt) => opt.title === "Hearing Impairment") && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="mt-2 space-y-2"
+          >
+            <div className="flex space-x-2">
+              <button
+                onClick={isTranscribing ? handleStopTranscription : handleSpeechToText}
+                disabled={isProcessing}
+                className={`flex-1 py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center space-x-2 ${
+                  isTranscribing ? "bg-red-500 hover:bg-red-600 text-white" : "bg-green-500 hover:bg-green-600 text-white"
+                }`}
+              >
+                {isTranscribing ? <FaMicrophoneSlash /> : <FaMicrophone />}
+                <span>{isTranscribing ? "Stop Transcribing" : "Start Transcribing"}</span>
+              </button>
+            </div>
+
+            <div className="text-xs text-gray-600 text-center mt-2">
+              {isProcessing
+                ? "Processing..."
+                : isTranscribing
+                ? "Transcribing audio..."
+                : "Ready to transcribe"}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Controls for Physical Disability */}
       {openSection === options.findIndex((opt) => opt.title === "Physical Disability") && (
         <motion.div

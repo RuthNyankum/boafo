@@ -6,7 +6,7 @@ import {
   resumeReading,
   stopReading,
 } from "../utils/textToSpeech";
-import { speechToText } from "../utils/speechToText";
+import { startTranscription, stopTranscription } from "../utils/speechToText";
 import { AccessibilityOption, LanguageOption } from "../types/accessibility";
 import { interfaceResize } from "../utils/interfaceResize";
 
@@ -17,6 +17,7 @@ export const useAccessibility = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [isStopped, setIsStopped] = useState<boolean>(true);
+  const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
 
   const toggleSection = (section: number) => {
     setOpenSection(openSection === section ? null : section);
@@ -28,12 +29,13 @@ export const useAccessibility = () => {
   }, []);
 
   const handleTextToSpeech = async () => {
-    if (isProcessing || !isStopped) return; // Prevent restarting if already running
+    if (isProcessing || !isStopped) return;
 
     try {
       setIsProcessing(true);
-      setIsStopped(false); // TTS has started
-      setIsPaused(false); // Ensure not paused
+      setIsStopped(false);
+      setIsPaused(false);
+      
       const response = await readAloud({
         mode: "auto",
         language: selectedLanguage,
@@ -48,12 +50,15 @@ export const useAccessibility = () => {
       setIsProcessing(false);
     }
   };
+
   const handleStopReading = async () => {
+    if (isStopped) return;
+
     try {
       const response = await stopReading();
       if (response.status === "success") {
-        setIsStopped(true); // Mark as stopped
-        setIsPaused(false); // Reset pause state
+        setIsStopped(true);
+        setIsPaused(false);
       }
     } catch (error) {
       console.error("Error stopping reading:", error);
@@ -61,7 +66,7 @@ export const useAccessibility = () => {
   };
 
   const handlePauseResume = async () => {
-    if (isStopped) return; // Don't allow pause/resume if TTS is stopped
+    if (isStopped) return;
 
     try {
       if (isPaused) {
@@ -81,18 +86,32 @@ export const useAccessibility = () => {
   };
 
   const handleSpeechToText = async () => {
-    if (isProcessing) return;
+    if (isProcessing || isTranscribing) return;
 
     try {
       setIsProcessing(true);
-      const response = await speechToText();
-      if (response.status === "error") {
+      const response = await startTranscription({ language: selectedLanguage });
+
+      if (response.status === "success") {
+        setIsTranscribing(true);
+      } else {
         console.error("Speech-to-text error:", response.message);
       }
     } catch (error) {
-      console.error("Speech-to-text error:", error);
+      console.error("Speech-to-text error:", error instanceof Error ? error.message : "Unknown error");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleStopTranscription = async () => {
+    try {
+      const response = await stopTranscription();
+      if (response.status === "success") {
+        setIsTranscribing(false);
+      }
+    } catch (error) {
+      console.error("Error stopping transcription:", error instanceof Error ? error.message : "Unknown error");
     }
   };
 
@@ -138,8 +157,11 @@ export const useAccessibility = () => {
     isProcessing,
     isPaused,
     isStopped,
+    isTranscribing,
     handleStopReading,
     handlePauseResume,
     handleTextToSpeech,
+    handleSpeechToText,
+    handleStopTranscription,
   };
 };

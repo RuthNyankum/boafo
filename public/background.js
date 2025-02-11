@@ -1,4 +1,4 @@
-// Initialize TTS engine when the extension is installed
+// Initialize text-to-speech when the extension is installed
 chrome.runtime.onInstalled.addListener(() => {
   chrome.tts.speak('Extension installed successfully', {
     lang: 'en-US',
@@ -8,6 +8,7 @@ chrome.runtime.onInstalled.addListener(() => {
     requiredEventTypes: ['start', 'end'],
   });
 });
+let audioStream = null;
 
 // Listener for messages from popup or content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -35,6 +36,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Required for async response
   }
 
+  
   // Handle text-to-speech
   if (request.action === "readText") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -69,6 +71,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   // Handle reading tags
+  
+  // Handle reading tags
   if (request.action === "readTagByTag") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs && tabs[0]?.id) {
@@ -101,16 +105,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Required for async response
   }
 
-  // Handle media monitoring
-  if (request.action === "monitorMedia") {
-    if (sender.tab?.id) {
-      chrome.tabs.sendMessage(sender.tab.id, { action: "monitorMedia" });
-      sendResponse({ status: "success", message: "Media monitoring started" });
-    } else {
-      console.error("No active tab found for media monitoring.");
-      sendResponse({ status: "error", message: "No active tab found" });
-    }
+
+  // Handle live transcription request
+  if (request.type === 'START_TRANSCRIPTION') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.id) {
+        chrome.tabs.sendMessage(tabs[0].id, { type: "START_TRANSCRIPTION" });
+      }
+    });
+    return true;
   }
 
-  return true; // Required for async response
+  return true;
 });
+
+function initializeTranscription() {
+  if (!('webkitSpeechRecognition' in window)) {
+    console.error('Speech recognition not supported');
+    return;
+  }
+}

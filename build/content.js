@@ -1,12 +1,12 @@
 let synth = window.speechSynthesis;
 let utterance = null;
 let highlightedElements = [];
-let recognition = null; // Add recognition object
-let isRecognitionPaused = false; // State for recognizing pause
+let recognition = null;
+let transcriptionDiv = null;
 
 // Helper function to clean up highlights
 function cleanupHighlights() {
-  highlightedElements.forEach(el => {
+  highlightedElements.forEach((el) => {
     if (el && el.parentNode) {
       const parent = el.parentNode;
       parent.replaceChild(document.createTextNode(el.textContent), el);
@@ -22,11 +22,11 @@ function highlightText(text) {
 
   const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
   let node;
-  let found = false;
 
   while ((node = walk.nextNode())) {
-    const regex = new RegExp(`\\b${text}\\b`, "i"); // Match exact word
+    const regex = new RegExp(`\\b${text.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\b`, "i");
     const match = node.textContent.match(regex);
+
     if (match) {
       const span = document.createElement("span");
       span.style.backgroundColor = "yellow";
@@ -44,17 +44,97 @@ function highlightText(text) {
         parent.insertBefore(beforeText, span);
         highlightedElements.push(span);
 
-        // Scroll smoothly to the highlighted word
         span.scrollIntoView({ behavior: "smooth", block: "center" });
-        found = true;
       }
+      break;
     }
-    if (found) break; // Stop at the first match to avoid wrong highlights
   }
 }
 
-// Listen for messages from the background script
+function createTranscriptionUI() {
+  if (!transcriptionDiv) {
+    transcriptionDiv = document.createElement("div");
+    transcriptionDiv.id = "live-caption-container";
+    transcriptionDiv.style.cssText = `
+      position: fixed;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 80%;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      z-index: 10000;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      text-align: center;
+      display: none;
+    `;
+    document.body.appendChild(transcriptionDiv);
+  }
+}
+
+function updateTranscriptionUI(finalText, interimText) {
+  if (!transcriptionDiv) return;
+  transcriptionDiv.style.display = "block";
+  transcriptionDiv.textContent = finalText + interimText;
+  if (!finalText && !interimText) transcriptionDiv.style.display = "none";
+}
+
+function initializeTranscription() {
+  if (!('webkitSpeechRecognition' in window)) {
+    console.error("Speech recognition not supported in this browser.");
+    return;
+  }
+
+  if (!transcriptionDiv) createTranscriptionUI();
+
+  recognition = new webkitSpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = "en-US";
+
+  recognition.onresult = (event) => {
+    let interimTranscript = "";
+    let finalTranscript = "";
+
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      } else {
+        interimTranscript += event.results[i][0].transcript;
+      }
+    }
+    updateTranscriptionUI(finalTranscript, interimTranscript);
+  };
+
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error);
+  };
+
+  recognition.start();
+}
+
+function stopTranscription() {
+  if (recognition) {
+    recognition.stop();
+    if (transcriptionDiv) transcriptionDiv.style.display = "none";
+  }
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // interface resize 
+  if (request.action === "resizePage") {
+    try {
+      document.body.style.zoom = `${request.zoomLevel}%`;
+      sendResponse({ status: "success", message: "Page resized successfully" });
+    } catch (error) {
+      sendResponse({ status: "error", message: error.message });
+    }
+    return true;
+  }
+
   // Handle text-to-speech functionality
   if (request.action === "readText") {
     try {
@@ -145,31 +225,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  // Handle resize functionality
-  if (request.action === "resizePage") {
-    try {
-      const zoomLevel = Math.max(0.1, Math.min(request.zoomLevel / 100, 5));
-      if (document.body) {
-        document.body.style.transform = `scale(${zoomLevel})`;
-        document.body.style.transformOrigin = "top left";
-        document.body.style.width = `${100 / zoomLevel}%`;
-        sendResponse({ status: "success", message: `Resized to ${request.zoomLevel}%` });
-      } else {
-        sendResponse({ status: "error", message: "Document body not found" });
-      }
-    } catch (error) {
-      console.error("Error resizing page:", error);
-      sendResponse({ status: "error", message: error.message });
-    }
-    return true;
+  if (request.type === "START_TRANSCRIPTION") {
+    initializeTranscription();
+    sendResponse({ status: "success" });
+  } else if (request.type === "STOP_TRANSCRIPTION") {
+    stopTranscription();
+    sendResponse({ status: "success" });
   }
+  return true;
 });
-
 // Function to get selected text
 function getSelectedText() {
   return window.getSelection().toString();
 }
-
 // Cleanup on page unload
 window.addEventListener("unload", () => {
   if (synth.speaking) synth.cancel();

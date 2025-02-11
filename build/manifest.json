@@ -5,6 +5,7 @@
   "version": "1.0.0",
   "permissions": [
     "activeTab",
+    "tabCapture",
     "storage",
     "scripting",
     "tabs",
@@ -13,9 +14,7 @@
     "ttsEngine",
     "microphone"
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
