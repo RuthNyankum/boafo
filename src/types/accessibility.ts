@@ -4,12 +4,12 @@ export interface AccessibilityOption {
   title: string;
   description: string;
   icon: IconType;
-  action: () => void | Promise<void>;
+  action: () => void;
 }
 
 export interface LanguageOption {
   lang: string;
-  value: "en-US"| "fr" | "ak" | "gaa" | "dag" | "ee"| "es";
+  value: string;
 }
 export interface TranscriptionResponse {
   status: 'success' | 'error';
@@ -37,3 +37,7 @@ export interface TTSConfig {
   pitch?: number;
   volume?: number;
 }
+
+
+
+

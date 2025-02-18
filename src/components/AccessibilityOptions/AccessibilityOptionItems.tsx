@@ -27,9 +27,9 @@ const AccessibilityOptionItem: React.FC<AccessibilityOptionItemProps> = ({
       <button
         onClick={() => {
           toggleSection(index);
-          item.action();
+          // No auto-trigger of item.action() here.
         }}
-        className="w-full flex justify-between items-center p-3 text-sm font-medium bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2  transition-colors duration-200"
+        className="w-full flex justify-between items-center p-3 text-sm font-medium bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 transition-colors duration-200"
         aria-expanded={isOpen}
         aria-controls={`section-${index}`}
       >
@@ -50,10 +50,10 @@ const AccessibilityOptionItem: React.FC<AccessibilityOptionItemProps> = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.3 }}
             className="p-3 bg-white text-xs text-gray-700"
           >
             {item.description}

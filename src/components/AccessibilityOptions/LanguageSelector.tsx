@@ -21,14 +21,12 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.3 }}
-      className={`mt-4 flex ${isFeatureView ? "justify-center" : "justify-end"}`} 
+      className={`mt-4 flex ${isFeatureView ? "justify-center" : "justify-end"}`}
     >
       <select
         id="language"
         value={selectedLanguage}
-        className={`bg-gray-100 rounded-md border-none focus:ring-1 focus:ring-blue-200 ${
-          isFeatureView ? "text-lg p-3" : "text-sm p-2" 
-        }`}
+        className={`bg-gray-100 rounded-md border-none focus:ring-1 focus:ring-blue-200 ${isFeatureView ? "text-lg p-3" : "text-sm p-2"}`}
         onChange={(e) => {
           setSelectedLanguage(e.target.value);
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {

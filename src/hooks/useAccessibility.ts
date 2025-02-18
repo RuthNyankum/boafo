@@ -1,19 +1,13 @@
-import { useState } from 'react';
-import { FaWheelchair, FaEarDeaf, FaEyeLowVision } from 'react-icons/fa6';
 import { useTextToSpeech } from './useTextToSpeech';
 import { useSpeechToText } from './useSpeechToText';
 import { useZoom } from './useZoom';
 import { AccessibilityOption } from '../types/accessibility';
+import { FaWheelchair, FaEarDeaf, FaEyeLowVision } from 'react-icons/fa6';
 
 export const useAccessibility = () => {
-  const [openSection, setOpenSection] = useState<number | null>(null);
   const tts = useTextToSpeech();
   const stt = useSpeechToText();
   const zoom = useZoom();
-
-  const toggleSection = (section: number) => {
-    setOpenSection(openSection === section ? null : section);
-  };
 
   const options: AccessibilityOption[] = [
     {
@@ -37,9 +31,7 @@ export const useAccessibility = () => {
   ];
 
   return {
-    openSection,
     options,
-    toggleSection,
     ...tts,
     ...stt,
     ...zoom,

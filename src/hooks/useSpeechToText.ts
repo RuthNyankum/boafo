@@ -56,6 +56,14 @@ export const useSpeechToText = () => {
     }
   }, []);
 
+  const handlePauseResume = useCallback(async () => {
+    if (isPaused) {
+      await handleResumeTranscription();
+    } else {
+      await handlePauseTranscription();
+    }
+  }, [isPaused, handlePauseTranscription, handleResumeTranscription]);
+
   return { 
     isProcessing, 
     isTranscribing, 
@@ -63,6 +71,7 @@ export const useSpeechToText = () => {
     handleSpeechToText, 
     handleStopTranscription,
     handlePauseTranscription,
-    handleResumeTranscription 
+    handleResumeTranscription,
+    handlePauseResume
   };
 };
