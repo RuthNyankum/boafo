@@ -47,3 +47,39 @@ function updateUI(text) {
 
 // Start transcription when page loads using the default language
 startLiveTranscription();
+
+
+// TEXT TO SPEECH 
+require("dotenv").config(); // Load environment variables
+const express = require("express");
+const axios = require("axios");
+const cors = require("cors");
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+app.post("/text-to-speech", async (req, res) => {
+    const { text, language } = req.body;
+    const apiKey = process.env.GOOGLE_API_KEY; // Secure API key
+    
+    if (!apiKey) {
+        return res.status(500).send("Server Error: API Key not found.");
+    }
+
+    const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+
+    try {
+        const response = await axios.post(url, {
+            input: { text },
+            voice: { languageCode: language, ssmlGender: "NEUTRAL" },
+            audioConfig: { audioEncoding: "MP3" },
+        });
+
+        res.send(response.data.audioContent);
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+});
+
+app.listen(3000, () => console.log("Server running on port 3000"));

@@ -1,11 +1,11 @@
 import { TTSResponse, TTSConfig } from "../types/accessibility";
 
-const sendMessageToTab = async (
-  tabId: number,
+// Send messages to the background script (which now handles TTS via Google API)
+const sendMessageToBackground = async (
   message: object
 ): Promise<TTSResponse> => {
   return new Promise<TTSResponse>((resolve, reject) => {
-    chrome.tabs.sendMessage(tabId, message, (response) => {
+    chrome.runtime.sendMessage(message, (response) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
       } else {
@@ -21,15 +21,11 @@ export const readAloud = async ({
 }: TTSConfig): Promise<TTSResponse> => {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (!tab?.id) {
-      throw new Error("No active tab found");
-    }
-
     let text = "";
+
     if (mode === "selection") {
       const [{ result }] = await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
+        target: { tabId: tab!.id! },
         func: () => window.getSelection()?.toString() || "",
       });
       text = result || "";
@@ -37,7 +33,7 @@ export const readAloud = async ({
 
     if (!text && mode === "auto") {
       const [{ result }] = await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
+        target: { tabId: tab!.id! },
         func: () => document.body.innerText,
       });
       text = result || "";
@@ -47,7 +43,8 @@ export const readAloud = async ({
       throw new Error(`No text found to read in mode: ${mode}`);
     }
 
-    return await sendMessageToTab(tab.id, {
+    // Send message to background for Google TTS processing
+    return await sendMessageToBackground({
       action: "readText",
       text,
       lang: language,
@@ -62,13 +59,7 @@ export const readAloud = async ({
 
 export const stopReading = async (): Promise<TTSResponse> => {
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (!tab?.id) {
-      throw new Error("No active tab found");
-    }
-
-    return await sendMessageToTab(tab.id, { action: "stopReading" });
+    return await sendMessageToBackground({ action: "stopReading" });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
@@ -79,13 +70,7 @@ export const stopReading = async (): Promise<TTSResponse> => {
 
 export const pauseReading = async (): Promise<TTSResponse> => {
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (!tab?.id) {
-      throw new Error("No active tab found");
-    }
-
-    return await sendMessageToTab(tab.id, { action: "pauseReading" });
+    return await sendMessageToBackground({ action: "pauseReading" });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
@@ -96,13 +81,7 @@ export const pauseReading = async (): Promise<TTSResponse> => {
 
 export const resumeReading = async (): Promise<TTSResponse> => {
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (!tab?.id) {
-      throw new Error("No active tab found");
-    }
-
-    return await sendMessageToTab(tab.id, { action: "resumeReading" });
+    return await sendMessageToBackground({ action: "resumeReading" });
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Accessibility Options",
+  "name": "Boafo",
   "description": "Provides accessibility features like text-to-speech, speech-to-text, and interface resizing.",
   "version": "1.0.0",
   "permissions": [
@@ -22,6 +22,11 @@
   "action": {
     "default_popup": "index.html"
   },
+  "icons":{
+    "16": "icons/icon_16.png",
+    "48": "icons/icon_48.png",
+    "128": "icons/icon_128.png"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -31,19 +36,19 @@
   "commands": {
     "toggle-speech": {
       "suggested_key": {
-        "default": "Ctrl+Shift+S"
+        "default": "Alt+Shift+S"
       },
       "description": "Toggle Speech Recognition"
     },
     "toggle-text-to-speech": {
       "suggested_key": {
-        "default": "Ctrl+Shift+T"
+        "default": "Alt+Shift+T"
       },
       "description": "Toggle Text-to-Speech"
     },
     "adjust-zoom": {
       "suggested_key": {
-        "default": "Ctrl+Shift+Z"
+        "default": "Alt+Shift+Z"
       },
       "description": "Adjust Zoom"
     }

@@ -4,6 +4,8 @@ let highlightedElements = [];
 let recognition = null;
 let transcriptionDiv = null;
 let currentLanguage = "en-US";
+// Global variable to hold the current Google TTS audio
+window.currentAudio = window.currentAudio || null;
 
 // Helper function to clean up highlights
 function cleanupHighlights() {
@@ -73,12 +75,12 @@ function createTranscriptionUI() {
       border-radius: 4px;
       font-family: sans-serif;
       font-size: 18px;
-      text-align: center;
       line-height: 1.5;
+      text-align: center;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
       word-wrap: break-word;
-      overflow-y: auto;
-      max-height: 200px;
+      max-height: calc(1.5em * 4); /* Limits the box to 4 lines */
+      overflow: hidden; /* Hides any text beyond 4 lines */
       display: none;
     `;
     document.body.appendChild(transcriptionDiv);
@@ -86,12 +88,19 @@ function createTranscriptionUI() {
 }
 
 
+
 function updateTranscriptionUI(finalText, interimText) {
   if (!transcriptionDiv) return;
+  const fullText = finalText + interimText;
+  const lines = fullText.split('\n');
+  const displayText = lines.slice(-4).join('\n');
   transcriptionDiv.style.display = "block";
-  transcriptionDiv.textContent = finalText + interimText;
-  if (!finalText && !interimText) transcriptionDiv.style.display = "none";
+  transcriptionDiv.textContent = displayText;
+  if (!displayText.trim()) {
+    transcriptionDiv.style.display = "none";
+  }
 }
+
 
 function initializeTranscription() {
   if (!('webkitSpeechRecognition' in window)) {
@@ -152,10 +161,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  // Handle language updates from the extension UI
+  // Update language setting
   if (request.action === "updateLanguage") {
     currentLanguage = request.language;
-    // If transcription is active, update its language setting immediately
     if (recognition) {
       recognition.lang = currentLanguage;
     }
@@ -163,133 +171,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       status: "success",
       message: `Language updated to ${currentLanguage}`
     });
-    return true;
-  }
-
-  // Handle text-to-speech functionality
-  if (request.action === "readText") {
-    try {
-      if (synth.speaking) synth.cancel();
-
-      const textToRead = request.text || getSelectedText() || document.body.textContent;
-      utterance = new SpeechSynthesisUtterance(textToRead);
-      // Use the updated global currentLanguage for speech synthesis
-      utterance.lang = currentLanguage;
-      utterance.rate = request.rate || 1;
-      utterance.pitch = request.pitch || 1;
-
-      // Highlighting logic: highlight words as they are spoken
-      utterance.onboundary = (event) => {
-        if (event.name === "word" || event.name === "boundary") {
-          const charIndex = event.charIndex; // Get exact character position
-          const words = textToRead.substring(charIndex).match(/\b\w+\b/g); // Extract word at charIndex
-          if (words && words.length > 0) {
-            highlightText(words[0]); // Highlight the exact spoken word
-          }
-        }
-      };
-
-      utterance.onend = () => {
-        setTimeout(cleanupHighlights, 500); // Delay cleanup for smooth transition
-        sendResponse({
-          status: "success",
-          message: "Reading completed"
-        });
-      };
-      utterance.onerror = (error) => {
-        cleanupHighlights();
-        console.error("Speech synthesis error:", error);
-        sendResponse({
-          status: "error",
-          message: error.message
-        });
-      };
-
-      synth.speak(utterance);
-      sendResponse({
-        status: "success",
-        message: "Started reading"
-      });
-    } catch (error) {
-      console.error("Error in readText:", error);
-      sendResponse({
-        status: "error",
-        message: error.message
-      });
-    }
-    return true;
-  }
-
-  if (request.action === "stopReading") {
-    try {
-      if (synth.speaking) {
-        synth.cancel();
-        cleanupHighlights();
-        sendResponse({
-          status: "success",
-          message: "Speech stopped"
-        });
-      } else {
-        sendResponse({
-          status: "info",
-          message: "No active speech to stop"
-        });
-      }
-    } catch (error) {
-      console.error("Error stopping speech:", error);
-      sendResponse({
-        status: "error",
-        message: error.message
-      });
-    }
-    return true;
-  }
-
-  if (request.action === "pauseReading") {
-    try {
-      if (synth.speaking && !synth.paused) {
-        synth.pause();
-        sendResponse({
-          status: "success",
-          message: "Speech paused"
-        });
-      } else {
-        sendResponse({
-          status: "info",
-          message: "No active speech to pause"
-        });
-      }
-    } catch (error) {
-      console.error("Error pausing speech:", error);
-      sendResponse({
-        status: "error",
-        message: error.message
-      });
-    }
-    return true;
-  }
-
-  if (request.action === "resumeReading") {
-    try {
-      if (synth.paused) {
-        synth.resume();
-        sendResponse({
-          status: "success",
-          message: "Speech resumed"
-        });
-      } else {
-        sendResponse({
-          status: "info",
-          message: "No paused speech to resume"
-        });
-      }
-    } catch (error) {
-      console.error("Error resuming speech:", error);
-      sendResponse({
-        status: "error",
-        message: error.message
-      });
-    }
     return true;
   }
 
@@ -304,12 +185,48 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       status: "success"
     });
   }
+  // --- Handle Google TTS Audio Playback Commands ---
+  if (request.action === "playAudio") {
+    if (window.currentAudio) {
+      window.currentAudio.pause();
+    }
+    window.currentAudio = new Audio(request.audioUrl);
+    window.currentAudio.play();
+    sendResponse({ status: "success", message: "Audio playing" });
+    return true;
+  }
+  if (request.action === "pauseAudio") {
+    if (window.currentAudio && !window.currentAudio.paused) {
+      window.currentAudio.pause();
+      sendResponse({ status: "success", message: "Audio paused" });
+    } else {
+      sendResponse({ status: "info", message: "No audio to pause" });
+    }
+    return true;
+  }
+  if (request.action === "resumeAudio") {
+    if (window.currentAudio && window.currentAudio.paused) {
+      window.currentAudio.play();
+      sendResponse({ status: "success", message: "Audio resumed" });
+    } else {
+      sendResponse({ status: "info", message: "No audio to resume" });
+    }
+    return true;
+  }
+  if (request.action === "stopAudio") {
+    if (window.currentAudio) {
+      window.currentAudio.pause();
+      window.currentAudio.currentTime = 0;
+      window.currentAudio = null;
+      sendResponse({ status: "success", message: "Audio stopped" });
+    } else {
+      sendResponse({ status: "info", message: "No audio to stop" });
+    }
+    return true;
+  }
   return true;
 });
-// Function to get selected text
-function getSelectedText() {
-  return window.getSelection().toString();
-}
+
 // Cleanup on page unload
 window.addEventListener("unload", () => {
   if (synth.speaking) synth.cancel();

@@ -9,8 +9,46 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 let currentLanguage = 'en-US';
-let audioStream = null;
 let isPaused = false;
+
+
+async function googleTextToSpeech(text, lang) {
+  const apiKey = "AIzaSyDiIJJdPVUwTuM5d-QIaTYy0OIFX9vfNtk"; // Replace with a secure method
+  const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input: { text },
+        voice: { languageCode: lang || "en-US", ssmlGender: "NEUTRAL" },
+        audioConfig: { audioEncoding: "MP3" },
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.audioContent) {
+      const audioUrl = `data:audio/mp3;base64,${data.audioContent}`;
+      
+      // Send message to active tab to play the audio
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.sendMessage(tabs[0].id, { action: "playAudio", audioUrl });
+        }
+      });
+
+      return { status: "success", message: "Started reading" };
+    } else {
+      return { status: "error", message: "No audio content returned" };
+    }
+  } catch (error) {
+    console.error("Google TTS error:", error);
+    return { status: "error", message: error.message };
+  }
+}
+
 
 
 // Listen for keyboard shortcut commands
@@ -73,38 +111,54 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  // Handle text-to-speech
-  if (request.action === "readText") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs && tabs[0]?.id) {
-        chrome.tabs.sendMessage(
-          tabs[0].id,
-          { action: "readText", text: request.text, lang: request.lang || currentLanguage},
-          (response) => {
-            sendResponse(response);
-          }
-        );
-      } else {
-        console.warn("No active tab found.");
-        sendResponse({ status: "error", message: "No active tab found" });
-      }
-    });
-    return true; // Required for async response
+   // Handle text-to-speech request via Google TTS API
+   if (request.action === "readText") {
+    googleTextToSpeech(request.text, request.lang || currentLanguage)
+      .then(response => sendResponse(response));
+    return true; // Asynchronous response
   }
+// Pause reading
+if (request.action === "pauseReading") {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]?.id) {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "pauseAudio" }, (response) => {
+        sendResponse(response);
+      });
+    } else {
+      sendResponse({ status: "error", message: "No active tab found" });
+    }
+  });
+  return true;
+}
 
-  // Stop speech
-  if (request.action === "stopReading") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs && tabs.length > 0) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "stopReading" }, (response) => {
-          sendResponse(response);
-        });
-      } else {
-        sendResponse({ status: "error", message: "No active tab found" });
-      }
-    });
-    return true; // Required for async response
-  }
+// Resume reading
+if (request.action === "resumeReading") {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]?.id) {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "resumeAudio" }, (response) => {
+        sendResponse(response);
+      });
+    } else {
+      sendResponse({ status: "error", message: "No active tab found" });
+    }
+  });
+  return true;
+}
+
+// Stop reading
+if (request.action === "stopReading") {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]?.id) {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "stopAudio" }, (response) => {
+        sendResponse(response);
+      });
+    } else {
+      sendResponse({ status: "error", message: "No active tab found" });
+    }
+  });
+  return true;
+}
+
 
    // Handle reading tags (tag-by-tag)
    if (request.action === "readTagByTag") {

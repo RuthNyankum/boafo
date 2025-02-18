@@ -11,6 +11,9 @@
   "description": "",
   "dependencies": {
     "@google-cloud/speech": "^6.7.0",
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "fs": "^0.0.1-security"
   }
 }
