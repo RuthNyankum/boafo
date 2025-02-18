@@ -1,11 +1,11 @@
-
-import AccessibilityOptions from './components/AccessibilityOptions/AccessibilityOptions';
+import AccessibilityOptions from "./components/AccessibilityOptions/AccessibilityOptions";
+import { LanguageProvider } from "./context/language.context";
 
 function App() {
   return (
-    <div>
-      <AccessibilityOptions/>
-    </div>
+    <LanguageProvider>
+      <AccessibilityOptions />
+    </LanguageProvider>
   );
 }
 

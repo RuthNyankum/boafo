@@ -3,6 +3,7 @@ let utterance = null;
 let highlightedElements = [];
 let recognition = null;
 let transcriptionDiv = null;
+let currentLanguage = "en-US";
 
 // Helper function to clean up highlights
 function cleanupHighlights() {
@@ -18,6 +19,7 @@ function cleanupHighlights() {
 
 // Function to highlight text and scroll to it
 function highlightText(text) {
+  if (!text.trim()) return;
   cleanupHighlights();
 
   const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
@@ -44,7 +46,10 @@ function highlightText(text) {
         parent.insertBefore(beforeText, span);
         highlightedElements.push(span);
 
-        span.scrollIntoView({ behavior: "smooth", block: "center" });
+        span.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
       }
       break;
     }
@@ -57,23 +62,29 @@ function createTranscriptionUI() {
     transcriptionDiv.id = "live-caption-container";
     transcriptionDiv.style.cssText = `
       position: fixed;
-      bottom: 50px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      max-width: 80%;
-      background-color: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      z-index: 10000;
-      font-family: Arial, sans-serif;
-      font-size: 16px;
+      width: 90%;
+      max-width: 800px;
+      background-color: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      padding: 16px;
+      border-radius: 4px;
+      font-family: sans-serif;
+      font-size: 18px;
       text-align: center;
+      line-height: 1.5;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      word-wrap: break-word;
+      overflow-y: auto;
+      max-height: 200px;
       display: none;
     `;
     document.body.appendChild(transcriptionDiv);
   }
 }
+
 
 function updateTranscriptionUI(finalText, interimText) {
   if (!transcriptionDiv) return;
@@ -93,7 +104,7 @@ function initializeTranscription() {
   recognition = new webkitSpeechRecognition();
   recognition.continuous = true;
   recognition.interimResults = true;
-  recognition.lang = "en-US";
+  recognition.lang = currentLanguage;
 
   recognition.onresult = (event) => {
     let interimTranscript = "";
@@ -128,10 +139,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "resizePage") {
     try {
       document.body.style.zoom = `${request.zoomLevel}%`;
-      sendResponse({ status: "success", message: "Page resized successfully" });
+      sendResponse({
+        status: "success",
+        message: "Page resized successfully"
+      });
     } catch (error) {
-      sendResponse({ status: "error", message: error.message });
+      sendResponse({
+        status: "error",
+        message: error.message
+      });
     }
+    return true;
+  }
+
+  // Handle language updates from the extension UI
+  if (request.action === "updateLanguage") {
+    currentLanguage = request.language;
+    // If transcription is active, update its language setting immediately
+    if (recognition) {
+      recognition.lang = currentLanguage;
+    }
+    sendResponse({
+      status: "success",
+      message: `Language updated to ${currentLanguage}`
+    });
     return true;
   }
 
@@ -142,13 +173,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       const textToRead = request.text || getSelectedText() || document.body.textContent;
       utterance = new SpeechSynthesisUtterance(textToRead);
-      utterance.lang = request.lang || "en-US";
+      // Use the updated global currentLanguage for speech synthesis
+      utterance.lang = currentLanguage;
       utterance.rate = request.rate || 1;
       utterance.pitch = request.pitch || 1;
 
-      const sentences = textToRead.match(/[^.!?]+[.!?]+/g) || [textToRead];
-      let currentSentenceIndex = 0;
-
+      // Highlighting logic: highlight words as they are spoken
       utterance.onboundary = (event) => {
         if (event.name === "word" || event.name === "boundary") {
           const charIndex = event.charIndex; // Get exact character position
@@ -161,20 +191,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       utterance.onend = () => {
         setTimeout(cleanupHighlights, 500); // Delay cleanup for smooth transition
-        sendResponse({ status: "success", message: "Reading completed" });
+        sendResponse({
+          status: "success",
+          message: "Reading completed"
+        });
       };
-
       utterance.onerror = (error) => {
         cleanupHighlights();
         console.error("Speech synthesis error:", error);
-        sendResponse({ status: "error", message: error.message });
+        sendResponse({
+          status: "error",
+          message: error.message
+        });
       };
 
       synth.speak(utterance);
-      sendResponse({ status: "success", message: "Started reading" });
+      sendResponse({
+        status: "success",
+        message: "Started reading"
+      });
     } catch (error) {
       console.error("Error in readText:", error);
-      sendResponse({ status: "error", message: error.message });
+      sendResponse({
+        status: "error",
+        message: error.message
+      });
     }
     return true;
   }
@@ -184,13 +225,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (synth.speaking) {
         synth.cancel();
         cleanupHighlights();
-        sendResponse({ status: "success", message: "Speech stopped" });
+        sendResponse({
+          status: "success",
+          message: "Speech stopped"
+        });
       } else {
-        sendResponse({ status: "info", message: "No active speech to stop" });
+        sendResponse({
+          status: "info",
+          message: "No active speech to stop"
+        });
       }
     } catch (error) {
       console.error("Error stopping speech:", error);
-      sendResponse({ status: "error", message: error.message });
+      sendResponse({
+        status: "error",
+        message: error.message
+      });
     }
     return true;
   }
@@ -199,13 +249,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     try {
       if (synth.speaking && !synth.paused) {
         synth.pause();
-        sendResponse({ status: "success", message: "Speech paused" });
+        sendResponse({
+          status: "success",
+          message: "Speech paused"
+        });
       } else {
-        sendResponse({ status: "info", message: "No active speech to pause" });
+        sendResponse({
+          status: "info",
+          message: "No active speech to pause"
+        });
       }
     } catch (error) {
       console.error("Error pausing speech:", error);
-      sendResponse({ status: "error", message: error.message });
+      sendResponse({
+        status: "error",
+        message: error.message
+      });
     }
     return true;
   }
@@ -214,23 +273,36 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     try {
       if (synth.paused) {
         synth.resume();
-        sendResponse({ status: "success", message: "Speech resumed" });
+        sendResponse({
+          status: "success",
+          message: "Speech resumed"
+        });
       } else {
-        sendResponse({ status: "info", message: "No paused speech to resume" });
+        sendResponse({
+          status: "info",
+          message: "No paused speech to resume"
+        });
       }
     } catch (error) {
       console.error("Error resuming speech:", error);
-      sendResponse({ status: "error", message: error.message });
+      sendResponse({
+        status: "error",
+        message: error.message
+      });
     }
     return true;
   }
 
   if (request.type === "START_TRANSCRIPTION") {
     initializeTranscription();
-    sendResponse({ status: "success" });
+    sendResponse({
+      status: "success"
+    });
   } else if (request.type === "STOP_TRANSCRIPTION") {
     stopTranscription();
-    sendResponse({ status: "success" });
+    sendResponse({
+      status: "success"
+    });
   }
   return true;
 });

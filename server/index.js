@@ -1,15 +1,15 @@
 const speech = require('@google-cloud/speech');
 process.env.GOOGLE_APPLICATION_CREDENTIALS = 'boafo-448803-43d3166a8626.json';
 
-async function startLiveTranscription() {
+async function startLiveTranscription(language = 'en-US') {
     const speechClient = new speech.SpeechClient();
 
-    // Configure request
+    // Configure request with a dynamic languageCode
     const request = {
         config: {
             encoding: 'LINEAR16',
             sampleRateHertz: 44100,
-            languageCode: 'en-US',
+            languageCode: language,
         },
         interimResults: true, // Get real-time updates
     };
@@ -45,5 +45,5 @@ function updateUI(text) {
     }
 }
 
-// Start transcription when page loads
+// Start transcription when page loads using the default language
 startLiveTranscription();

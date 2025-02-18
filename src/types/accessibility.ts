@@ -9,7 +9,7 @@ export interface AccessibilityOption {
 
 export interface LanguageOption {
   lang: string;
-  value: "en-US" | "ak" | "gaa" | "dag" | "ee";
+  value: "en-US"| "fr" | "ak" | "gaa" | "dag" | "ee"| "es";
 }
 export interface TranscriptionResponse {
   status: 'success' | 'error';

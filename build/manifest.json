@@ -34,6 +34,18 @@
         "default": "Ctrl+Shift+S"
       },
       "description": "Toggle Speech Recognition"
+    },
+    "toggle-text-to-speech": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+T"
+      },
+      "description": "Toggle Text-to-Speech"
+    },
+    "adjust-zoom": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Z"
+      },
+      "description": "Adjust Zoom"
     }
   }
 }

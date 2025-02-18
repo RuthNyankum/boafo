@@ -39,4 +39,3 @@ const ZoomSlider: React.FC<ZoomSliderProps> = ({ zoomLevel, setZoomLevel, adjust
 };
 
 export default ZoomSlider;
-
