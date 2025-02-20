@@ -40,18 +40,23 @@ const AccessibilityOptions: React.FC = () => {
   const { selectedLanguage, setSelectedLanguage, langOptions } = useLanguage();
 
   // Use AccessibilityContext for view mode and selected feature.
-  const { viewMode, selectedFeature, toggleFeature, backToFeatures } = useAccessibilityContext();
+  const { viewMode, selectedFeature, toggleFeature, backToFeatures } =
+    useAccessibilityContext();
 
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className={`p-4 bg-white rounded-lg shadow-lg w-80 overflow-hidden ${viewMode === "feature" ? "w-96" : ""}`}
+      className={`p-4 bg-white rounded-lg shadow-lg w-80 overflow-hidden ${
+        viewMode === "feature" ? "w-96" : ""
+      }`}
     >
       {viewMode === "all" ? (
         <>
-          <h2 className="font-bold mb-2 text-gray-800">Accessibility Options</h2>
+          <h2 className="font-bold mb-2 text-gray-800">
+            Accessibility Options
+          </h2>
           <div className="space-y-2">
             {options.map((item, index) => (
               <AccessibilityOptionItem
@@ -85,7 +90,9 @@ const AccessibilityOptions: React.FC = () => {
                 >
                   <div className="flex space-x-4">
                     <button
-                      onClick={isStopped ? handleTextToSpeech : handleStopReading}
+                      onClick={
+                        isStopped ? handleTextToSpeech : handleStopReading
+                      }
                       disabled={isProcessing}
                       className={`flex-1 py-3 px-6 rounded-md transition-colors duration-200 flex items-center justify-center space-x-3 text-lg ${
                         isStopped
@@ -103,7 +110,11 @@ const AccessibilityOptions: React.FC = () => {
                         disabled={isProcessing}
                         className="flex-1 bg-blue-500 text-white py-3 px-6 rounded-md hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center space-x-3 text-lg disabled:opacity-50"
                       >
-                        {ttsIsPaused ? <FaPlay size={24} /> : <FaPause size={24} />}
+                        {ttsIsPaused ? (
+                          <FaPlay size={24} />
+                        ) : (
+                          <FaPause size={24} />
+                        )}
                         <span>{ttsIsPaused ? "Resume" : "Pause"}</span>
                       </button>
                     )}
@@ -150,7 +161,11 @@ const AccessibilityOptions: React.FC = () => {
                 >
                   <div className="flex space-x-4">
                     <button
-                      onClick={isTranscribing ? handleStopTranscription : handleSpeechToText}
+                      onClick={
+                        isTranscribing
+                          ? handleStopTranscription
+                          : handleSpeechToText
+                      }
                       disabled={isProcessing}
                       className={`flex-1 py-3 px-6 rounded-md transition-colors duration-200 flex items-center justify-center space-x-3 text-lg ${
                         isTranscribing
@@ -158,8 +173,16 @@ const AccessibilityOptions: React.FC = () => {
                           : "bg-green-500 hover:bg-green-600 text-white"
                       }`}
                     >
-                      {isTranscribing ? <FaMicrophoneSlash size={24} /> : <FaMicrophone size={24} />}
-                      <span>{isTranscribing ? "Stop Transcribing" : "Start Transcribing"}</span>
+                      {isTranscribing ? (
+                        <FaMicrophoneSlash size={24} />
+                      ) : (
+                        <FaMicrophone size={24} />
+                      )}
+                      <span>
+                        {isTranscribing
+                          ? "Stop Transcribing"
+                          : "Start Transcribing"}
+                      </span>
                     </button>
                   </div>
 

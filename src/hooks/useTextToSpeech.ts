@@ -9,13 +9,18 @@ export const useTextToSpeech = () => {
   const [isStopped, setIsStopped] = useState(true);
   const [speechRate, setSpeechRate] = useState(1.0); // initial speech rate
 
+  // Function to update the audio playback rate dynamically
+  const updateAudioRate = useCallback((rate: number) => {
+    chrome.runtime.sendMessage({ action: "updatePlaybackRate", rate });
+  }, []);
+
   const handleTextToSpeech = useCallback(async () => {
     if (isProcessing || !isStopped) return;
     try {
       setIsProcessing(true);
       setIsStopped(false);
       setIsPaused(false);
-      // Pass the current speech rate to the TTS utility.
+      // Start the TTS with the current speech rate.
       await readAloud({ language: selectedLanguage, rate: speechRate });
     } catch (error) {
       console.error("Text-to-speech error:", error);
@@ -50,15 +55,27 @@ export const useTextToSpeech = () => {
     }
   }, [isStopped]);
 
-  // Increase speech rate (max capped at 2.0x)
+  // Increase the rate (capped at 2.0x)
   const increaseRate = useCallback(() => {
-    setSpeechRate((prev) => Math.min(prev + 0.1, 2.0));
-  }, []);
+    setSpeechRate((prev) => {
+      const newRate = Math.min(prev + 0.1, 2.0);
+      if (!isStopped) {
+        updateAudioRate(newRate);
+      }
+      return newRate;
+    });
+  }, [isStopped, updateAudioRate]);
 
-  // Decrease speech rate (min capped at 0.5x)
+  // Decrease the rate (capped at 0.5x)
   const decreaseRate = useCallback(() => {
-    setSpeechRate((prev) => Math.max(prev - 0.1, 0.5));
-  }, []);
+    setSpeechRate((prev) => {
+      const newRate = Math.max(prev - 0.1, 0.5);
+      if (!isStopped) {
+        updateAudioRate(newRate);
+      }
+      return newRate;
+    });
+  }, [isStopped, updateAudioRate]);
 
   return { 
     isProcessing, 

@@ -186,6 +186,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       status: "success"
     });
   }
+
+  if (request.action === "updatePlaybackRate") {
+    if (window.currentAudio) {
+      window.currentAudio.playbackRate = request.rate;
+      sendResponse({ status: "success", message: "Playback rate updated" });
+    } else {
+      sendResponse({ status: "error", message: "No audio playing" });
+    }
+    return true;
+  }
+  
   // --- Handle Google TTS Audio Playback Commands ---
   if (request.action === "playAudio") {
     if (window.currentAudio) {
