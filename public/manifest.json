@@ -11,8 +11,7 @@
     "tabs",
     "notifications",
     "tts",
-    "ttsEngine",
-    "microphone"
+    "ttsEngine"
   ],
   "host_permissions": ["<all_urls>"],
   "background": {

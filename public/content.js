@@ -58,91 +58,136 @@ function highlightText(text) {
   }
 }
 
+// Create the live caption UI with only the STOP control
 function createTranscriptionUI() {
   if (!transcriptionDiv) {
     transcriptionDiv = document.createElement("div");
     transcriptionDiv.id = "live-caption-container";
     transcriptionDiv.style.cssText = `
       position: fixed;
-      bottom: 20px;
+      bottom: 5%;
       left: 50%;
       transform: translateX(-50%);
-      width: 90%;
+      width: 65%;
       max-width: 800px;
-      background-color: rgba(0, 0, 0, 0.85);
+      background-color: rgba(0, 0, 0, 0.8);
       color: #fff;
-      padding: 16px;
-      border-radius: 4px;
-      font-family: sans-serif;
-      font-size: 18px;
-      line-height: 1.5;
-      text-align: center;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-      word-wrap: break-word;
-      max-height: calc(1.5em * 4); /* Limits the box to 4 lines */
-      overflow: hidden; /* Hides any text beyond 4 lines */
+      padding: 12px 16px;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.4;
+      border-radius: 10px;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+      z-index: 9999;
       display: none;
     `;
+    
+    // Header
+    const header = document.createElement("div");
+    header.innerText = "Boafo Live Caption";
+    header.style.cssText = `
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 14px;
+      opacity: 0.8;
+    `;
+    
+    // Transcript text container
+    const transcriptText = document.createElement("div");
+    transcriptText.id = "live-caption-text";
+    transcriptText.style.cssText = `
+      max-height: 100px;
+      overflow-y: auto;
+      word-wrap: break-word;
+      margin-bottom: 8px;
+    `;
+    
+    // Controls container with only the STOP button
+    const controlContainer = document.createElement("div");
+    controlContainer.id = "live-caption-controls";
+    controlContainer.style.cssText = "text-align: right;";
+    
+    const stopBtn = document.createElement("button");
+    stopBtn.id = "stop-btn";
+    stopBtn.style.cssText = "padding: 6px 12px; font-size: 14px;";
+    stopBtn.innerText = "Stop";
+    stopBtn.addEventListener("click", () => {
+      stopTranscription();
+    });
+    
+    controlContainer.appendChild(stopBtn);
+    
+    transcriptionDiv.appendChild(header);
+    transcriptionDiv.appendChild(transcriptText);
+    transcriptionDiv.appendChild(controlContainer);
+    
     document.body.appendChild(transcriptionDiv);
   }
 }
 
-
-
+// Update the transcription UI with transcript text and auto-scroll
 function updateTranscriptionUI(finalText, interimText) {
   if (!transcriptionDiv) return;
-  const fullText = finalText + interimText;
-  const lines = fullText.split('\n');
-  const displayText = lines.slice(-4).join('\n');
-  transcriptionDiv.style.display = "block";
-  transcriptionDiv.textContent = displayText;
-  if (!displayText.trim()) {
-    transcriptionDiv.style.display = "none";
+  const fullText = (finalText + " " + interimText).trim();
+  
+  const transcriptText = document.getElementById("live-caption-text");
+  if (transcriptText) {
+    transcriptText.textContent = fullText;
+    transcriptText.scrollTop = transcriptText.scrollHeight;
   }
+  
+  transcriptionDiv.style.display = fullText ? "block" : "none";
 }
 
-
+// Start speech recognition
 function initializeTranscription() {
-  if (!('webkitSpeechRecognition' in window)) {
+  if (!("webkitSpeechRecognition" in window)) {
     console.error("Speech recognition not supported in this browser.");
     return;
   }
-
   if (!transcriptionDiv) createTranscriptionUI();
-
+  
+  accumulatedTranscript = "";
+  
   recognition = new webkitSpeechRecognition();
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.lang = currentLanguage;
-
+  
   recognition.onresult = (event) => {
     let interimTranscript = "";
-    let finalTranscript = "";
-
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
+    for (let i = event.resultIndex; i < event.results.length; i++) {
       if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript;
+        accumulatedTranscript += event.results[i][0].transcript + " ";
       } else {
         interimTranscript += event.results[i][0].transcript;
       }
     }
-    updateTranscriptionUI(finalTranscript, interimTranscript);
+    updateTranscriptionUI(accumulatedTranscript, interimTranscript);
   };
-
+  
   recognition.onerror = (event) => {
     console.error("Speech recognition error:", event.error);
   };
-
+  
+  recognition.onend = () => {
+    // End handling: no auto-restart since only STOP is available.
+  };
+  
   recognition.start();
 }
 
+// Stop transcription completely: stop recognition, clear transcript, and hide UI
 function stopTranscription() {
   if (recognition) {
     recognition.stop();
-    if (transcriptionDiv) transcriptionDiv.style.display = "none";
+    recognition = null;
+  }
+  accumulatedTranscript = "";
+  if (transcriptionDiv) {
+    transcriptionDiv.style.display = "none";
   }
 }
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // interface resize 
   if (request.action === "resizePage") {
@@ -179,12 +224,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       currentLanguage = request.language;
     }
     initializeTranscription();
-    sendResponse({ status: "success" });
-  } else if (request.type === "STOP_TRANSCRIPTION") {
+    sendResponse({ status: "success", message: "Transcription started" });
+    return true;
+  }
+  
+  if (request.type === "STOP_TRANSCRIPTION") {
     stopTranscription();
-    sendResponse({
-      status: "success"
-    });
+    sendResponse({ status: "success", message: "Transcription stopped" });
+    return true;
+  }
+  
+  // Optionally still support PAUSE and RESUME messages if needed by external controls
+  if (request.type === "PAUSE_TRANSCRIPTION") {
+    if (recognition) {
+      recognition.stop();
+    }
+    sendResponse({ status: "success", message: "Transcription paused" });
+    return true;
+  }
+  
+  if (request.type === "RESUME_TRANSCRIPTION") {
+    if (!recognition) {
+      initializeTranscription();
+    }
+    sendResponse({ status: "success", message: "Transcription resumed" });
+    return true;
   }
 
   if (request.action === "updatePlaybackRate") {

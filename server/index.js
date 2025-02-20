@@ -25,16 +25,19 @@ async function startLiveTranscription(language = 'en-US') {
         })
         .on('error', err => console.error('Error:', err));
 
-    // Capture microphone audio
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(stream => {
+        chrome.tabCapture.capture({ audio: true, video: false }, stream => {
+            if (!stream) {
+              console.error('Failed to capture tab audio.');
+              return;
+            }
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorder.ondataavailable = event => {
+              if (event.data.size > 0) {
                 recognizeStream.write(event.data);
+              }
             };
             mediaRecorder.start(500); // Send data every 500ms
-        })
-        .catch(err => console.error('Microphone error:', err));
+          });
 }
 
 // Function to update the Chrome extension UI
