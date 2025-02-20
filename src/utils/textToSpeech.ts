@@ -1,4 +1,5 @@
 import { TTSResponse, TTSConfig } from "../types/accessibility";
+import { getLanguageCodes } from "../utils/languageMapping";
 
 // Send messages to the background script (which now handles TTS via Google API)
 const sendMessageToBackground = async (
@@ -18,6 +19,9 @@ const sendMessageToBackground = async (
 export const readAloud = async ({
   mode = "auto",
   language = "en-US",
+  rate = 1.0,
+  pitch = 0,
+  volume = 1.0,
 }: TTSConfig): Promise<TTSResponse> => {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -43,11 +47,17 @@ export const readAloud = async ({
       throw new Error(`No text found to read in mode: ${mode}`);
     }
 
-    // Send message to background for Google TTS processing
+    // Convert using mapping for TTS
+    const languageCodes = getLanguageCodes(language);
+
+    // Send message to background for Google TTS processing including rate, pitch, and volume
     return await sendMessageToBackground({
       action: "readText",
       text,
-      lang: language,
+      lang: languageCodes.tts,
+      rate,
+      pitch,
+      volume,
     });
   } catch (error) {
     const errorMessage =

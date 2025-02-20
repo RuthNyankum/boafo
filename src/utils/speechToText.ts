@@ -1,12 +1,15 @@
 import { TranscriptionOptions, TranscriptionResponse } from "../types/accessibility";
+import { getLanguageCodes } from "../utils/languageMapping";
 
 export const startTranscription = async (
   options: TranscriptionOptions = {}
 ): Promise<TranscriptionResponse> => {
   try {
+    // Convert using mapping for speech-to-text
+    const languageCodes = getLanguageCodes(options.language || 'en-US');
     const response = await chrome.runtime.sendMessage({ 
       type: 'START_TRANSCRIPTION',
-      language: options.language || 'en-US'
+      language: languageCodes.speech
     });
     
     if (response?.status === 'success') {
@@ -53,7 +56,6 @@ export const stopTranscription = async (): Promise<TranscriptionResponse> => {
   }
 };
 
-// Optionally, add pause and resume functions in a similar fashion:
 export const pauseTranscription = async (): Promise<TranscriptionResponse> => {
   try {
     const response = await chrome.runtime.sendMessage({ 

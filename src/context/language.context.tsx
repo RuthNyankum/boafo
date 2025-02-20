@@ -23,6 +23,9 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
     { lang: "Ewe", value: "ee" },
     { lang: "French", value: "fr" },
     { lang: "Spanish", value: "es" },
+    { lang: "German", value: "de" },
+    { lang: "Italian", value: "it" },
+    { lang: "Afrikaans", value: "afrikaans" }
   ];
 
   return (

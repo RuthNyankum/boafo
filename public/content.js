@@ -175,10 +175,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.type === "START_TRANSCRIPTION") {
+    if (request.language) {
+      currentLanguage = request.language;
+    }
     initializeTranscription();
-    sendResponse({
-      status: "success"
-    });
+    sendResponse({ status: "success" });
   } else if (request.type === "STOP_TRANSCRIPTION") {
     stopTranscription();
     sendResponse({

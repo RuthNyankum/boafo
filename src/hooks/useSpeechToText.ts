@@ -1,10 +1,5 @@
 import { useCallback, useState } from 'react';
-import { 
-  startTranscription, 
-  stopTranscription, 
-  pauseTranscription, 
-  resumeTranscription 
-} from '../utils/speechToText';
+import { startTranscription, stopTranscription, pauseTranscription, resumeTranscription } from '../utils/speechToText';
 import { useLanguage } from '../context/language.context';
 
 export const useSpeechToText = () => {

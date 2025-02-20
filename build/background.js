@@ -12,7 +12,7 @@ let currentLanguage = 'en-US';
 let isPaused = false;
 
 
-async function googleTextToSpeech(text, lang) {
+async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.0) {
   const apiKey = "AIzaSyDiIJJdPVUwTuM5d-QIaTYy0OIFX9vfNtk"; // Replace with a secure method
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
 
@@ -23,7 +23,12 @@ async function googleTextToSpeech(text, lang) {
       body: JSON.stringify({
         input: { text },
         voice: { languageCode: lang || "en-US", ssmlGender: "NEUTRAL" },
-        audioConfig: { audioEncoding: "MP3" },
+        audioConfig: {
+          audioEncoding: "MP3",
+          speakingRate: rate,
+          pitch: pitch,
+          volumeGainDb: volume,
+        },
       }),
     });
 
@@ -111,9 +116,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-   // Handle text-to-speech request via Google TTS API
-   if (request.action === "readText") {
-    googleTextToSpeech(request.text, request.lang || currentLanguage)
+  // Handle text-to-speech request via Google TTS API
+  if (request.action === "readText") {
+    googleTextToSpeech(
+      request.text,
+      request.lang || currentLanguage,
+      request.rate,
+      request.pitch,
+      request.volume
+    )
       .then(response => sendResponse(response));
     return true; // Asynchronous response
   }
@@ -196,15 +207,17 @@ if (request.action === "stopReading") {
     return true; // Required for async response
   }
 
-  // Handle live transcription request
-  if (request.type === 'START_TRANSCRIPTION') {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { type: "START_TRANSCRIPTION" });
-      }
-    });
-    return true;
-  }
+  // Handle live transcription requests
+if (request.type === 'START_TRANSCRIPTION') {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]?.id) {
+      // Forward the language along with the transcription start request
+      chrome.tabs.sendMessage(tabs[0].id, { type: "START_TRANSCRIPTION", language: request.language });
+    }
+  });
+  return true;
+}
+
   // Handle pausing transcription
   if (request.type === 'PAUSE_TRANSCRIPTION') {
     isPaused = true;

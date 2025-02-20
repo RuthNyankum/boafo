@@ -22,13 +22,16 @@ const AccessibilityOptions: React.FC = () => {
     isProcessing,
     isPaused: ttsIsPaused,
     isStopped,
+    speechRate,
     handleTextToSpeech,
     handleStopReading,
     handlePauseResume: ttsHandlePauseResume,
+    increaseRate,
+    decreaseRate,
     isTranscribing,
     handleSpeechToText,
     handleStopTranscription,
-    handlePauseResume: sttHandlePauseResume, // for speech-to-text pause/resume
+    handlePauseResume: sttHandlePauseResume,
     zoomLevel,
     adjustZoom,
   } = useAccessibility();
@@ -104,6 +107,25 @@ const AccessibilityOptions: React.FC = () => {
                         <span>{ttsIsPaused ? "Resume" : "Pause"}</span>
                       </button>
                     )}
+                  </div>
+
+                  {/* Speech Rate Controls */}
+                  <div className="flex items-center justify-center mt-2 space-x-4">
+                    <button
+                      onClick={decreaseRate}
+                      className="bg-gray-300 hover:bg-gray-400 text-white px-3 py-1 rounded"
+                    >
+                      –
+                    </button>
+                    <span className="text-base text-gray-700">
+                      Speed: {speechRate.toFixed(1)}x
+                    </span>
+                    <button
+                      onClick={increaseRate}
+                      className="bg-gray-300 hover:bg-gray-400 text-white px-3 py-1 rounded"
+                    >
+                      +
+                    </button>
                   </div>
 
                   <div className="text-base text-gray-600 text-center mt-2">
