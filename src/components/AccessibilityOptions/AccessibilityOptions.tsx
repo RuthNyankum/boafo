@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import { useAccessibilityContext } from "../../context/accessibility.context";
 import AccessibilityOptionItem from "./AccessibilityOptionItems";
+import VoiceSelector from "../VoiceSelector";
 
 const AccessibilityOptions: React.FC = () => {
   // Get feature actions and states from our custom hooks.
@@ -148,6 +149,8 @@ const AccessibilityOptions: React.FC = () => {
                       ? "Paused"
                       : "Running"}
                   </div>
+                  {/* Voice Selector */}
+                  <VoiceSelector />
                 </motion.div>
               )}
 

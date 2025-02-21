@@ -17,7 +17,7 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 
-async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.0) {
+async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.0,voiceType = "NEUTRAL") {
   const apiKey = "AIzaSyDiIJJdPVUwTuM5d-QIaTYy0OIFX9vfNtk"; // Replace with a secure method
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
 
@@ -27,7 +27,7 @@ async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         input: { text },
-        voice: { languageCode: lang || "en-US", ssmlGender: "NEUTRAL" },
+        voice: { languageCode: lang || "en-US", ssmlGender:voiceType },
         audioConfig: {
           audioEncoding: "MP3",
           speakingRate: rate,
@@ -128,7 +128,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       request.lang || currentLanguage,
       request.rate,
       request.pitch,
-      request.volume
+      request.volume,
+      request.voiceType
     )
       .then(response => sendResponse(response));
     return true; // Asynchronous response

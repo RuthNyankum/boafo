@@ -1,13 +1,15 @@
 import { useCallback, useState } from 'react';
 import { readAloud, pauseReading, resumeReading, stopReading } from '../utils/textToSpeech';
 import { useLanguage } from '../context/language.context';
+import { useVoice } from '../context/voice.context';
 
 export const useTextToSpeech = () => {
   const { selectedLanguage } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isStopped, setIsStopped] = useState(true);
-  const [speechRate, setSpeechRate] = useState(1.0); // initial speech rate
+  const [speechRate, setSpeechRate] = useState(1.0); 
+  const { selectedVoice } = useVoice();
 
   // Function to update the audio playback rate dynamically
   const updateAudioRate = useCallback((rate: number) => {
@@ -21,13 +23,13 @@ export const useTextToSpeech = () => {
       setIsStopped(false);
       setIsPaused(false);
       // Start the TTS with the current speech rate.
-      await readAloud({ language: selectedLanguage, rate: speechRate });
+      await readAloud({ language: selectedLanguage, rate: speechRate,voiceType: selectedVoice });
     } catch (error) {
       console.error("Text-to-speech error:", error);
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, isStopped, selectedLanguage, speechRate]);
+  }, [isProcessing, isStopped, selectedLanguage, speechRate,selectedVoice]);
 
   const handlePauseResume = useCallback(async () => {
     if (isStopped) return;

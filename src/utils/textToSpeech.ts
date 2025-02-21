@@ -22,7 +22,8 @@ export const readAloud = async ({
   rate = 1.0,
   pitch = 0,
   volume = 1.0,
-}: TTSConfig): Promise<TTSResponse> => {
+  voiceType = "NEUTRAL"
+}: TTSConfig & { voiceType?: string }): Promise<TTSResponse> => {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     let text = "";
@@ -55,6 +56,7 @@ export const readAloud = async ({
       action: "readText",
       text,
       lang: languageCodes.tts,
+      voiceType,
       rate,
       pitch,
       volume,

@@ -1,13 +1,9 @@
 // components/VoiceSelector.tsx
-
 import React from "react";
+import { useVoice } from "../context/voice.context"; // Import the hook
 
-interface VoiceSelectorProps {
-  selectedVoice: string;
-  setSelectedVoice: (voice: string) => void;
-}
-
-const VoiceSelector: React.FC<VoiceSelectorProps> = ({ selectedVoice, setSelectedVoice }) => {
+const VoiceSelector: React.FC = () => {
+  const { selectedVoice, setSelectedVoice } = useVoice();
   const voiceOptions = [
     { label: "Neutral", value: "NEUTRAL" },
     { label: "Female", value: "FEMALE" },
