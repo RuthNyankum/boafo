@@ -17,17 +17,21 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 
-async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.0,voiceType = "NEUTRAL") {
-  const apiKey = "AIzaSyDiIJJdPVUwTuM5d-QIaTYy0OIFX9vfNtk"; // Replace with a secure method
-  const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+// Updated googleTextToSpeech function that routes the request to a secure backend proxy
+async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.0, voiceType = "NEUTRAL") {
+  // Instead of storing the API key in the extension, we send the request to a secure backend.
+  // The backend holds the API key securely and makes the call to Google TTS.
+  const proxyUrl = "http://localhost:3000/tts";
+  // Replace with your secure backend URL
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(proxyUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        input: { text },
-        voice: { languageCode: lang || "en-US", ssmlGender:voiceType },
+        text,
+        languageCode: lang || "en-US",
+        ssmlGender: voiceType,
         audioConfig: {
           audioEncoding: "MP3",
           speakingRate: rate,
@@ -58,6 +62,7 @@ async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.
     return { status: "error", message: error.message };
   }
 }
+
 
 
 
