@@ -58,6 +58,47 @@ function highlightText(text) {
   }
 }
 
+// Function to drive highlighting using SpeechSynthesis boundary events
+function speakWithHighlight(text, rate = 1.0) {
+  if (!text || !speechSynthesis) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = currentLanguage;
+  utterance.volume = 0;
+  // Set the silent utterance rate to match your audio playback rate
+  utterance.rate = rate;
+
+  const words = text.split(/\s+/);
+
+  utterance.onboundary = (event) => {
+    if (event.name === "word") {
+      let totalChars = 0;
+      let wordIndex = 0;
+      // Apply a small offset to trigger highlighting slightly earlier.
+      const adjustedCharIndex = Math.max(event.charIndex - 2, 0); // adjust offset value as needed
+      for (let i = 0; i < words.length; i++) {
+        totalChars += words[i].length + 1; // adding 1 for space
+        if (totalChars > adjustedCharIndex) {
+          wordIndex = i;
+          break;
+        }
+      }
+      const currentWord = words[wordIndex];
+      if (currentWord) {
+        highlightText(currentWord);
+      }
+    }
+  };
+
+  utterance.onend = () => {
+    // Optionally, clear highlights if desired:
+    // cleanupHighlights();
+  };
+
+  speechSynthesis.speak(utterance);
+}
+
+
+
 // Create the live caption UI with only the STOP control
 function createTranscriptionUI() {
   if (!transcriptionDiv) {
@@ -269,6 +310,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     window.currentAudio = new Audio(request.audioUrl);
     window.currentAudio.play();
     sendResponse({ status: "success", message: "Audio playing" });
+    return true;
+  }
+
+  // --- start highlighting text ---
+  if (request.action === "startHighlighting" && request.text) {
+    // Pass the speaking rate from your request so that both TTS and highlighting are synchronized.
+    speakWithHighlight(request.text, request.rate || 1.0);
+    sendResponse({ status: "success", message: "Highlighting started" });
     return true;
   }
   if (request.action === "pauseAudio") {

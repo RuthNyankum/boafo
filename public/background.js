@@ -127,18 +127,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   // Handle text-to-speech request via Google TTS API
-  if (request.action === "readText") {
-    googleTextToSpeech(
-      request.text,
-      request.lang || currentLanguage,
-      request.rate,
-      request.pitch,
-      request.volume,
-      request.voiceType
-    )
-      .then(response => sendResponse(response));
-    return true; // Asynchronous response
-  }
+if (request.action === "readText") {
+  googleTextToSpeech(
+    request.text,
+    request.lang || currentLanguage,
+    request.rate,
+    request.pitch,
+    request.volume,
+    request.voiceType
+  )
+    .then(response => {
+      // After playing the audio, also trigger highlighting.
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.sendMessage(tabs[0].id, { action: "startHighlighting", text: request.text });
+        }
+      });
+      sendResponse(response);
+    });
+  return true; // Asynchronous response
+}
+
 // Pause reading
 if (request.action === "pauseReading") {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -218,6 +227,16 @@ if (request.action === "stopReading") {
     return true; // Required for async response
   }
 
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]?.id) {
+      chrome.tabs.sendMessage(tabs[0].id, { 
+        action: "startHighlighting", 
+        text: request.text, 
+        rate: request.rate  // pass along the rate used for Google TTS
+      });
+    }
+  });
+  
   // Handle live transcription requests
 if (request.type === 'START_TRANSCRIPTION') {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
