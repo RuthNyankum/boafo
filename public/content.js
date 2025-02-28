@@ -1,4 +1,3 @@
-// content.js
 "use strict";
 
 // =====================
@@ -11,6 +10,7 @@ let currentLanguage = "en-US";
 let accumulatedTranscript = "";
 window.currentAudio = window.currentAudio || null;
 let highlightedElements = [];
+let isPaused = false; // Flag for transcription pause state
 
 // =====================
 // Helper Functions
@@ -36,7 +36,7 @@ function highlightText(text) {
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
   let node;
   while ((node = walker.nextNode())) {
-    const regex = new RegExp(`\\b${text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+    const regex = new RegExp(`\\b${text.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\b`, "i");
     const match = node.textContent.match(regex);
     if (match) {
       const span = document.createElement("span");
@@ -108,7 +108,7 @@ function speakWithHighlight(text, rate = 1.0) {
 // Transcription UI & Speech Recognition
 // =====================
 
-// Create live caption UI
+// Create live caption UI with Pause, Resume, and Stop buttons
 function createTranscriptionUI() {
   if (!transcriptionDiv) {
     transcriptionDiv = document.createElement("div");
@@ -152,22 +152,43 @@ function createTranscriptionUI() {
       margin-bottom: 8px;
     `;
     
-    // Controls container with only the STOP button
+    // Controls container with a toggle button and Stop button
     const controlContainer = document.createElement("div");
     controlContainer.id = "live-caption-controls";
     controlContainer.style.textAlign = "right";
     
-    const stopBtn = document.createElement("button");
-    stopBtn.id = "stop-btn";
-    stopBtn.style.cssText = "padding: 6px 12px; font-size: 14px;";
-    stopBtn.innerText = "Stop";
-    stopBtn.addEventListener("click", stopTranscription);
+    // Toggle Button (Pause/Resume)
+    const toggleBtn = document.createElement("button");
+    toggleBtn.id = "toggle-pause-btn";
+    toggleBtn.style.cssText = "padding: 6px 12px; font-size: 14px; margin-right: 4px;";
+    toggleBtn.innerText = "Pause";
+    toggleBtn.addEventListener("click", function() {
+      if (!isPaused) {
+        pauseTranscription();
+        toggleBtn.innerText = "Resume";
+      } else {
+        resumeTranscription();
+        toggleBtn.innerText = "Pause";
+      }
+    });
     
-    controlContainer.appendChild(stopBtn);
-    transcriptionDiv.appendChild(header);
-    transcriptionDiv.appendChild(transcriptText);
-    transcriptionDiv.appendChild(controlContainer);
-    document.body.appendChild(transcriptionDiv);
+  // Stop Button
+  const stopBtn = document.createElement("button");
+  stopBtn.id = "stop-btn";
+  stopBtn.style.cssText = "padding: 6px 12px; font-size: 14px;";
+  stopBtn.innerText = "Stop";
+  stopBtn.addEventListener("click", function() {
+    stopTranscription();
+    toggleBtn.innerText = "Pause"; // Reset toggle button text when transcription stops
+  });
+  
+  controlContainer.appendChild(toggleBtn);
+  controlContainer.appendChild(stopBtn);
+  
+  transcriptionDiv.appendChild(header);
+  transcriptionDiv.appendChild(transcriptText);
+  transcriptionDiv.appendChild(controlContainer);
+  document.body.appendChild(transcriptionDiv);
   }
 }
 
@@ -213,10 +234,11 @@ function initializeTranscription() {
   };
   
   recognition.onend = () => {
-    // No auto-restart; use STOP control to restart if desired.
+    // No auto-restart; use UI controls to restart if desired.
   };
   
   recognition.start();
+  isPaused = false;
 }
 
 // Stop the transcription and hide the UI
@@ -228,6 +250,49 @@ function stopTranscription() {
   accumulatedTranscript = "";
   if (transcriptionDiv) {
     transcriptionDiv.style.display = "none";
+  }
+  isPaused = true;
+}
+
+// Pause the transcription without clearing the transcript
+function pauseTranscription() {
+  if (recognition) {
+    recognition.stop();
+    isPaused = true;
+  }
+}
+
+// Resume transcription without clearing the transcript
+function resumeTranscription() {
+  if (isPaused) {
+    if (!("webkitSpeechRecognition" in window)) {
+      console.error("Speech recognition not supported in this browser.");
+      return;
+    }
+    createTranscriptionUI();
+    recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = currentLanguage;
+    
+    recognition.onresult = (event) => {
+      let interimTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          accumulatedTranscript += event.results[i][0].transcript + " ";
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+      updateTranscriptionUI(accumulatedTranscript, interimTranscript);
+    };
+    
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+    };
+    
+    recognition.start();
+    isPaused = false;
   }
 }
 

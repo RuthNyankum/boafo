@@ -152,40 +152,43 @@ function createTranscriptionUI() {
       margin-bottom: 8px;
     `;
     
-    // Controls container with Pause, Resume, and Stop buttons
+    // Controls container with a toggle button and Stop button
     const controlContainer = document.createElement("div");
     controlContainer.id = "live-caption-controls";
     controlContainer.style.textAlign = "right";
     
-    // Pause Button
-    const pauseBtn = document.createElement("button");
-    pauseBtn.id = "pause-btn";
-    pauseBtn.style.cssText = "padding: 6px 12px; font-size: 14px; margin-right: 4px;";
-    pauseBtn.innerText = "Pause";
-    pauseBtn.addEventListener("click", pauseTranscription);
+    // Toggle Button (Pause/Resume)
+    const toggleBtn = document.createElement("button");
+    toggleBtn.id = "toggle-pause-btn";
+    toggleBtn.style.cssText = "padding: 6px 12px; font-size: 14px; margin-right: 4px;";
+    toggleBtn.innerText = "Pause";
+    toggleBtn.addEventListener("click", function() {
+      if (!isPaused) {
+        pauseTranscription();
+        toggleBtn.innerText = "Resume";
+      } else {
+        resumeTranscription();
+        toggleBtn.innerText = "Pause";
+      }
+    });
     
-    // Resume Button
-    const resumeBtn = document.createElement("button");
-    resumeBtn.id = "resume-btn";
-    resumeBtn.style.cssText = "padding: 6px 12px; font-size: 14px; margin-right: 4px;";
-    resumeBtn.innerText = "Resume";
-    resumeBtn.addEventListener("click", resumeTranscription);
-    
-    // Stop Button
-    const stopBtn = document.createElement("button");
-    stopBtn.id = "stop-btn";
-    stopBtn.style.cssText = "padding: 6px 12px; font-size: 14px;";
-    stopBtn.innerText = "Stop";
-    stopBtn.addEventListener("click", stopTranscription);
-    
-    controlContainer.appendChild(pauseBtn);
-    controlContainer.appendChild(resumeBtn);
-    controlContainer.appendChild(stopBtn);
-    
-    transcriptionDiv.appendChild(header);
-    transcriptionDiv.appendChild(transcriptText);
-    transcriptionDiv.appendChild(controlContainer);
-    document.body.appendChild(transcriptionDiv);
+  // Stop Button
+  const stopBtn = document.createElement("button");
+  stopBtn.id = "stop-btn";
+  stopBtn.style.cssText = "padding: 6px 12px; font-size: 14px;";
+  stopBtn.innerText = "Stop";
+  stopBtn.addEventListener("click", function() {
+    stopTranscription();
+    toggleBtn.innerText = "Pause"; // Reset toggle button text when transcription stops
+  });
+  
+  controlContainer.appendChild(toggleBtn);
+  controlContainer.appendChild(stopBtn);
+  
+  transcriptionDiv.appendChild(header);
+  transcriptionDiv.appendChild(transcriptText);
+  transcriptionDiv.appendChild(controlContainer);
+  document.body.appendChild(transcriptionDiv);
   }
 }
 
@@ -248,7 +251,7 @@ function stopTranscription() {
   if (transcriptionDiv) {
     transcriptionDiv.style.display = "none";
   }
-  isPaused = false;
+  isPaused = true;
 }
 
 // Pause the transcription without clearing the transcript
