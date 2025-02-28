@@ -8,277 +8,125 @@ chrome.runtime.onInstalled.addListener(() => {
     requiredEventTypes: ['start', 'end'],
   });
 });
+
+// Global variables
 let currentLanguage = 'en-US';
 let isPaused = false;
-chrome.commands.onCommand.addListener((command) => {
-  if (command === "toggle-extension") {
-    chrome.action.openPopup().catch((err) => console.error("Failed to open popup:", err));
-  }
-});
 
-
-// Updated googleTextToSpeech function that routes the request to a secure backend proxy
-async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.0, voiceType = "NEUTRAL") {
-  // Instead of storing the API key in the extension, we send the request to a secure backend.
-  // The backend holds the API key securely and makes the call to Google TTS.
-  const proxyUrl = "http://localhost:3000/tts";
-  // Replace with your secure backend URL
-
-  try {
-    const response = await fetch(proxyUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,
-        languageCode: lang || "en-US",
-        ssmlGender: voiceType,
-        audioConfig: {
-          audioEncoding: "MP3",
-          speakingRate: rate,
-          pitch: pitch,
-          volumeGainDb: volume,
-        },
-      }),
-    });
-
-    const data = await response.json();
-
-    if (data.audioContent) {
-      const audioUrl = `data:audio/mp3;base64,${data.audioContent}`;
-      
-      // Send message to active tab to play the audio
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]?.id) {
-          chrome.tabs.sendMessage(tabs[0].id, { action: "playAudio", audioUrl });
-        }
-      });
-
-      return { status: "success", message: "Started reading" };
-    } else {
-      return { status: "error", message: "No audio content returned" };
-    }
-  } catch (error) {
-    console.error("Google TTS error:", error);
-    return { status: "error", message: error.message };
-  }
-}
-
-
-
-
-// Listen for keyboard shortcut commands
+// Handle keyboard shortcuts
 chrome.commands.onCommand.addListener((command) => {
   console.log('Command received:', command);
-  if (command === 'toggle-speech') {
-    // Trigger Speech Recognition
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'toggleSpeechRecognition' });
-      }
-    });
-  } else if (command === 'toggle-text-to-speech') {
-    // Trigger Text-to-Speech
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'toggleTextToSpeech' });
-      }
-    });
-  } else if (command === 'adjust-zoom') {
-    // Trigger interface zoom adjustment
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: 'adjustZoom' });
-      }
-    });
-  }
-});
-
-// Listener for messages from popup or content scripts
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // Handle resizing
-  if (request.action === "resizePage") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs && tabs[0]?.id) {
-        chrome.tabs.sendMessage(
-          tabs[0].id,
-          { action: "resizePage", zoomLevel: request.zoomLevel },
-          (response) => {
-            if (chrome.runtime.lastError) {
-              console.error("Detailed runtime error:", chrome.runtime.lastError);
-              sendResponse({ status: "error", message: chrome.runtime.lastError.message });
-            } else {
-              sendResponse(response);
-            }
-          }
-        );
-      } else {
-        console.error("No active tab found for resizing.");
-        sendResponse({ status: "error", message: "No active tab found." });
-      }
-    });
-    return true; // Required for async response
-  }
-
-   // Handle language updates
-   if (request.action === "updateLanguage") {
-    currentLanguage = request.language;
-    sendResponse({ status: "success", message: `Language updated to ${currentLanguage}` });
-    return true;
-  }
-
-  // Handle text-to-speech request via Google TTS API
-if (request.action === "readText") {
-  googleTextToSpeech(
-    request.text,
-    request.lang || currentLanguage,
-    request.rate,
-    request.pitch,
-    request.volume,
-    request.voiceType
-  )
-    .then(response => {
-      // After playing the audio, also trigger highlighting.
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]?.id) {
-          chrome.tabs.sendMessage(tabs[0].id, { action: "startHighlighting", text: request.text });
-        }
-      });
-      sendResponse(response);
-    });
-  return true; // Asynchronous response
-}
-
-// Pause reading
-if (request.action === "pauseReading") {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]?.id) {
-      chrome.tabs.sendMessage(tabs[0].id, { action: "pauseAudio" }, (response) => {
-        sendResponse(response);
-      });
-    } else {
-      sendResponse({ status: "error", message: "No active tab found" });
-    }
-  });
-  return true;
-}
-
-// Resume reading
-if (request.action === "resumeReading") {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]?.id) {
-      chrome.tabs.sendMessage(tabs[0].id, { action: "resumeAudio" }, (response) => {
-        sendResponse(response);
-      });
-    } else {
-      sendResponse({ status: "error", message: "No active tab found" });
-    }
-  });
-  return true;
-}
-
-// Stop reading
-if (request.action === "stopReading") {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]?.id) {
-      chrome.tabs.sendMessage(tabs[0].id, { action: "stopAudio" }, (response) => {
-        sendResponse(response);
-      });
-    } else {
-      sendResponse({ status: "error", message: "No active tab found" });
-    }
-  });
-  return true;
-}
-
-
-   // Handle reading tags (tag-by-tag)
-   if (request.action === "readTagByTag") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs && tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, { action: "getTags", tagName: request.tagName }, (response) => {
-          if (response?.tags?.length) {
-            const tags = response.tags;
-            let currentIndex = 0;
-
-            const utterance = new SpeechSynthesisUtterance();
-            // Use the updated language for tag reading
-            utterance.lang = currentLanguage;
-
-            utterance.onend = () => {
-              currentIndex++;
-              if (currentIndex < tags.length) {
-                utterance.text = tags[currentIndex];
-                speechSynthesis.speak(utterance);
-                chrome.tabs.sendMessage(tabs[0].id, { action: "highlightText", text: tags[currentIndex] });
-              }
-            };
-
-            utterance.text = tags[currentIndex];
-            speechSynthesis.speak(utterance);
-            chrome.tabs.sendMessage(tabs[0].id, { action: "highlightText", text: tags[currentIndex] });
-          } else {
-            sendResponse({ status: "error", message: "No tags found" });
-          }
-        });
-      } else {
-        sendResponse({ status: "error", message: "No active tab found" });
-      }
-    });
-    return true; // Required for async response
-  }
-
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]?.id) {
-      chrome.tabs.sendMessage(tabs[0].id, { 
-        action: "startHighlighting", 
-        text: request.text, 
-        rate: request.rate  // pass along the rate used for Google TTS
-      });
-    }
-  });
   
-  // Handle live transcription requests
-if (request.type === 'START_TRANSCRIPTION') {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0]?.id) {
-      // Forward the language along with the transcription start request
-      chrome.tabs.sendMessage(tabs[0].id, { type: "START_TRANSCRIPTION", language: request.language });
-    }
-  });
-  return true;
-}
-
-  // Handle pausing transcription
-  if (request.type === 'PAUSE_TRANSCRIPTION') {
-    isPaused = true;
-    if (audioStream) {
-      audioStream.getAudioTracks().forEach((track) => track.stop());
-    }
-    return true;
-  }
-
-  // Handle resuming transcription
-  if (request.type === 'RESUME_TRANSCRIPTION') {
-    isPaused = false;
-    if (audioStream) {
-      audioStream.getAudioTracks().forEach((track) => track.start());
-    }
-    return true;
-  }
-
-  // Handle stopping transcription
-  if (request.type === 'STOP_TRANSCRIPTION') {
-    isPaused = false;
-    if (audioStream) {
-      audioStream.getAudioTracks().forEach((track) => track.stop());
-    }
-    return true;
-  }
-
-  return true;
+  const actions = {
+    'toggle-extension': () => chrome.action.openPopup().catch(err => console.error('Failed to open popup:', err)),
+    'toggle-speech': () => sendMessageToActiveTab({ action: 'toggleSpeechRecognition' }),
+    'toggle-text-to-speech': () => sendMessageToActiveTab({ action: 'toggleTextToSpeech' }),
+    'adjust-zoom': () => sendMessageToActiveTab({ action: 'adjustZoom' }),
+  };
+  
+  if (actions[command]) actions[command]();
 });
 
+// Function to send messages to the active tab
+function sendMessageToActiveTab(message) {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]?.id) {
+      chrome.tabs.sendMessage(tabs[0].id, message);
+    }
+  });
+}
 
+// Handle messages from popup or content scripts
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  const handlers = {
+    resizePage: () => handleResizePage(request, sendResponse),
+    updateLanguage: () => updateLanguage(request, sendResponse),
+    readText: () => handleTextToSpeech(request, sendResponse),
+    pauseReading: () => sendMessageToActiveTab({ action: 'pauseAudio' }),
+    resumeReading: () => sendMessageToActiveTab({ action: 'resumeAudio' }),
+    stopReading: () => sendMessageToActiveTab({ action: 'stopAudio' }),
+    readTagByTag: () => handleReadTagByTag(request, sendResponse),
+    START_TRANSCRIPTION: () => sendMessageToActiveTab({ type: 'START_TRANSCRIPTION', language: request.language }),
+    PAUSE_TRANSCRIPTION: () => isPaused = true,
+    RESUME_TRANSCRIPTION: () => isPaused = false,
+    STOP_TRANSCRIPTION: () => isPaused = false,
+  };
+
+  if (handlers[request.action || request.type]) {
+    handlers[request.action || request.type]();
+    return true; // Required for async responses
+  }
+});
+
+// Handle resizing the page
+function handleResizePage(request, sendResponse) {
+  sendMessageToActiveTab({ action: 'resizePage', zoomLevel: request.zoomLevel });
+}
+
+// Update language settings
+function updateLanguage(request, sendResponse) {
+  currentLanguage = request.language;
+  sendResponse({ status: 'success', message: `Language updated to ${currentLanguage}` });
+}
+
+// Handle text-to-speech request via secure backend proxy
+async function handleTextToSpeech(request, sendResponse) {
+  const response = await googleTextToSpeech(request.text, request.lang || currentLanguage, request.rate, request.pitch, request.volume, request.voiceType);
+  sendMessageToActiveTab({ action: 'startHighlighting', text: request.text, rate: request.rate });
+  sendResponse(response);
+}
+
+// Google Text-to-Speech API call
+async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.0, voiceType = 'NEUTRAL') {
+  const proxyUrl = 'http://localhost:3000/tts'; // Secure backend URL
+  try {
+    const response = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, languageCode: lang, ssmlGender: voiceType, audioConfig: { audioEncoding: 'MP3', speakingRate: rate, pitch, volumeGainDb: volume } }),
+    });
+    const data = await response.json();
+    
+    if (data.audioContent) {
+      const audioUrl = `data:audio/mp3;base64,${data.audioContent}`;
+      sendMessageToActiveTab({ action: 'playAudio', audioUrl });
+      return { status: 'success', message: 'Started reading' };
+    } else {
+      return { status: 'error', message: 'No audio content returned' };
+    }
+  } catch (error) {
+    console.error('Google TTS error:', error);
+    return { status: 'error', message: error.message };
+  }
+}
+
+// Read webpage content tag by tag
+function handleReadTagByTag(request, sendResponse) {
+  sendMessageToActiveTab({ action: 'getTags', tagName: request.tagName }, (response) => {
+    if (response?.tags?.length) {
+      let currentIndex = 0;
+      const utterance = new SpeechSynthesisUtterance();
+      utterance.lang = currentLanguage;
+
+      utterance.onend = () => {
+        currentIndex++;
+        if (currentIndex < response.tags.length) {
+          utterance.text = response.tags[currentIndex];
+          speechSynthesis.speak(utterance);
+          sendMessageToActiveTab({ action: 'highlightText', text: response.tags[currentIndex] });
+        }
+      };
+
+      utterance.text = response.tags[currentIndex];
+      speechSynthesis.speak(utterance);
+      sendMessageToActiveTab({ action: 'highlightText', text: response.tags[currentIndex] });
+    } else {
+      sendResponse({ status: 'error', message: 'No tags found' });
+    }
+  });
+}
+
+// Initialize transcription
 function initializeTranscription() {
   if (!('webkitSpeechRecognition' in window)) {
     console.error('Speech recognition not supported');

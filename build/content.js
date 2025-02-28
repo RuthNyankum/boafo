@@ -1,13 +1,22 @@
+// content.js
+"use strict";
+
+// =====================
+// Global Variables
+// =====================
 let synth = window.speechSynthesis;
-let utterance = null;
-let highlightedElements = [];
 let recognition = null;
 let transcriptionDiv = null;
 let currentLanguage = "en-US";
-// Global variable to hold the current Google TTS audio
+let accumulatedTranscript = "";
 window.currentAudio = window.currentAudio || null;
+let highlightedElements = [];
 
-// Helper function to clean up highlights
+// =====================
+// Helper Functions
+// =====================
+
+// Clean up any highlighted elements
 function cleanupHighlights() {
   highlightedElements.forEach((el) => {
     if (el && el.parentNode) {
@@ -19,18 +28,16 @@ function cleanupHighlights() {
   highlightedElements = [];
 }
 
-// Function to highlight text and scroll to it
+// Highlight a given word and scroll it into view
 function highlightText(text) {
   if (!text.trim()) return;
   cleanupHighlights();
 
-  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
   let node;
-
-  while ((node = walk.nextNode())) {
-    const regex = new RegExp(`\\b${text.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\b`, "i");
+  while ((node = walker.nextNode())) {
+    const regex = new RegExp(`\\b${text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
     const match = node.textContent.match(regex);
-
     if (match) {
       const span = document.createElement("span");
       span.style.backgroundColor = "yellow";
@@ -39,7 +46,9 @@ function highlightText(text) {
       span.textContent = match[0];
 
       const beforeText = document.createTextNode(node.textContent.substring(0, match.index));
-      const afterText = document.createTextNode(node.textContent.substring(match.index + match[0].length));
+      const afterText = document.createTextNode(
+        node.textContent.substring(match.index + match[0].length)
+      );
 
       const parent = node.parentNode;
       if (parent) {
@@ -47,36 +56,34 @@ function highlightText(text) {
         parent.insertBefore(span, afterText);
         parent.insertBefore(beforeText, span);
         highlightedElements.push(span);
-
-        span.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
+        span.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       break;
     }
   }
 }
 
-// Function to drive highlighting using SpeechSynthesis boundary events
+// =====================
+// Highlighting via Silent Utterance
+// =====================
+
+// Uses a silent SpeechSynthesisUtterance to generate word-boundary events
 function speakWithHighlight(text, rate = 1.0) {
   if (!text || !speechSynthesis) return;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = currentLanguage;
   utterance.volume = 0;
-  // Set the silent utterance rate to match your audio playback rate
   utterance.rate = rate;
 
   const words = text.split(/\s+/);
-
   utterance.onboundary = (event) => {
     if (event.name === "word") {
       let totalChars = 0;
       let wordIndex = 0;
       // Apply a small offset to trigger highlighting slightly earlier.
-      const adjustedCharIndex = Math.max(event.charIndex - 2, 0); // adjust offset value as needed
+      const adjustedCharIndex = Math.max(event.charIndex - 2, 0);
       for (let i = 0; i < words.length; i++) {
-        totalChars += words[i].length + 1; // adding 1 for space
+        totalChars += words[i].length + 1; // +1 for the space
         if (totalChars > adjustedCharIndex) {
           wordIndex = i;
           break;
@@ -90,16 +97,18 @@ function speakWithHighlight(text, rate = 1.0) {
   };
 
   utterance.onend = () => {
-    // Optionally, clear highlights if desired:
+    // Optionally clear highlights when finished:
     // cleanupHighlights();
   };
 
   speechSynthesis.speak(utterance);
 }
 
+// =====================
+// Transcription UI & Speech Recognition
+// =====================
 
-
-// Create the live caption UI with only the STOP control
+// Create live caption UI
 function createTranscriptionUI() {
   if (!transcriptionDiv) {
     transcriptionDiv = document.createElement("div");
@@ -146,50 +155,42 @@ function createTranscriptionUI() {
     // Controls container with only the STOP button
     const controlContainer = document.createElement("div");
     controlContainer.id = "live-caption-controls";
-    controlContainer.style.cssText = "text-align: right;";
+    controlContainer.style.textAlign = "right";
     
     const stopBtn = document.createElement("button");
     stopBtn.id = "stop-btn";
     stopBtn.style.cssText = "padding: 6px 12px; font-size: 14px;";
     stopBtn.innerText = "Stop";
-    stopBtn.addEventListener("click", () => {
-      stopTranscription();
-    });
+    stopBtn.addEventListener("click", stopTranscription);
     
     controlContainer.appendChild(stopBtn);
-    
     transcriptionDiv.appendChild(header);
     transcriptionDiv.appendChild(transcriptText);
     transcriptionDiv.appendChild(controlContainer);
-    
     document.body.appendChild(transcriptionDiv);
   }
 }
 
-// Update the transcription UI with transcript text and auto-scroll
+// Update the live caption UI with the current transcript
 function updateTranscriptionUI(finalText, interimText) {
   if (!transcriptionDiv) return;
   const fullText = (finalText + " " + interimText).trim();
-  
   const transcriptText = document.getElementById("live-caption-text");
   if (transcriptText) {
     transcriptText.textContent = fullText;
     transcriptText.scrollTop = transcriptText.scrollHeight;
   }
-  
   transcriptionDiv.style.display = fullText ? "block" : "none";
 }
 
-// Start speech recognition
+// Initialize speech recognition for transcription
 function initializeTranscription() {
   if (!("webkitSpeechRecognition" in window)) {
     console.error("Speech recognition not supported in this browser.");
     return;
   }
-  if (!transcriptionDiv) createTranscriptionUI();
-  
+  createTranscriptionUI();
   accumulatedTranscript = "";
-  
   recognition = new webkitSpeechRecognition();
   recognition.continuous = true;
   recognition.interimResults = true;
@@ -212,13 +213,13 @@ function initializeTranscription() {
   };
   
   recognition.onend = () => {
-    // End handling: no auto-restart since only STOP is available.
+    // No auto-restart; use STOP control to restart if desired.
   };
   
   recognition.start();
 }
 
-// Stop transcription completely: stop recognition, clear transcript, and hide UI
+// Stop the transcription and hide the UI
 function stopTranscription() {
   if (recognition) {
     recognition.stop();
@@ -229,37 +230,68 @@ function stopTranscription() {
     transcriptionDiv.style.display = "none";
   }
 }
+
+// =====================
+// Toggle Functions for Keyboard Shortcuts
+// =====================
+
+function toggleTextToSpeech() {
+  // If audio is playing, stop it; otherwise, start reading a default text.
+  if (window.currentAudio) {
+    chrome.runtime.sendMessage({ action: "stopReading" }, (response) =>
+      console.log(response?.message)
+    );
+  } else {
+    // For demo purposes, read a snippet of the page text.
+    const text = document.body.innerText.slice(0, 200) || "No content available.";
+    chrome.runtime.sendMessage(
+      { action: "readText", text, rate: 1.0 },
+      (response) => console.log(response?.message)
+    );
+  }
+}
+
+function toggleSpeechToText() {
+  // If recognition is active, stop it; otherwise, start transcription.
+  if (recognition) {
+    stopTranscription();
+  } else {
+    initializeTranscription();
+  }
+}
+
+function adjustZoom(amount) {
+  let currentZoom = document.body.style.zoom ? parseInt(document.body.style.zoom) : 100;
+  let newZoom = currentZoom + amount;
+  document.body.style.zoom = `${newZoom}%`;
+}
+
+// =====================
+// Message Listener for Background Commands
+// =====================
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // interface resize 
+  // Resize Page
   if (request.action === "resizePage") {
     try {
       document.body.style.zoom = `${request.zoomLevel}%`;
-      sendResponse({
-        status: "success",
-        message: "Page resized successfully"
-      });
+      sendResponse({ status: "success", message: "Page resized successfully" });
     } catch (error) {
-      sendResponse({
-        status: "error",
-        message: error.message
-      });
+      sendResponse({ status: "error", message: error.message });
     }
     return true;
   }
 
-  // Update language setting
+  // Update Language
   if (request.action === "updateLanguage") {
     currentLanguage = request.language;
     if (recognition) {
       recognition.lang = currentLanguage;
     }
-    sendResponse({
-      status: "success",
-      message: `Language updated to ${currentLanguage}`
-    });
+    sendResponse({ status: "success", message: `Language updated to ${currentLanguage}` });
     return true;
   }
 
+  // Start Transcription
   if (request.type === "START_TRANSCRIPTION") {
     if (request.language) {
       currentLanguage = request.language;
@@ -268,30 +300,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ status: "success", message: "Transcription started" });
     return true;
   }
-  
+
+  // Stop Transcription
   if (request.type === "STOP_TRANSCRIPTION") {
     stopTranscription();
     sendResponse({ status: "success", message: "Transcription stopped" });
     return true;
   }
-  
-  // Optionally still support PAUSE and RESUME messages if needed by external controls
-  if (request.type === "PAUSE_TRANSCRIPTION") {
-    if (recognition) {
-      recognition.stop();
-    }
-    sendResponse({ status: "success", message: "Transcription paused" });
-    return true;
-  }
-  
-  if (request.type === "RESUME_TRANSCRIPTION") {
-    if (!recognition) {
-      initializeTranscription();
-    }
-    sendResponse({ status: "success", message: "Transcription resumed" });
-    return true;
-  }
 
+  // Update Playback Rate
   if (request.action === "updatePlaybackRate") {
     if (window.currentAudio) {
       window.currentAudio.playbackRate = request.rate;
@@ -301,8 +318,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true;
   }
-  
-  // --- Handle Google TTS Audio Playback Commands ---
+
+  // Google TTS Audio Playback Commands
   if (request.action === "playAudio") {
     if (window.currentAudio) {
       window.currentAudio.pause();
@@ -310,14 +327,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     window.currentAudio = new Audio(request.audioUrl);
     window.currentAudio.play();
     sendResponse({ status: "success", message: "Audio playing" });
-    return true;
-  }
-
-  // --- start highlighting text ---
-  if (request.action === "startHighlighting" && request.text) {
-    // Pass the speaking rate from your request so that both TTS and highlighting are synchronized.
-    speakWithHighlight(request.text, request.rate || 1.0);
-    sendResponse({ status: "success", message: "Highlighting started" });
     return true;
   }
   if (request.action === "pauseAudio") {
@@ -349,10 +358,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true;
   }
+
+  // Start Highlighting (trigger silent utterance)
+  if (request.action === "startHighlighting" && request.text) {
+    speakWithHighlight(request.text, request.rate || 1.0);
+    sendResponse({ status: "success", message: "Highlighting started" });
+    return true;
+  }
+
+  // Keyboard Shortcuts for toggling features
+  if (request.action === "toggleTextToSpeech") {
+    toggleTextToSpeech();
+    sendResponse({ status: "success", message: "TTS toggled" });
+    return true;
+  }
+  if (request.action === "toggleSpeechToText") {
+    toggleSpeechToText();
+    sendResponse({ status: "success", message: "Speech-to-text toggled" });
+    return true;
+  }
+  if (request.action === "adjustZoom") {
+    if (request.zoomLevel === "in") {
+      adjustZoom(10); // Increase zoom by 10%
+    } else if (request.zoomLevel === "out") {
+      adjustZoom(-10); // Decrease zoom by 10%
+    }
+    sendResponse({ status: "success", message: "Zoom adjusted" });
+    return true;
+  }
+
   return true;
 });
 
-// Cleanup on page unload
+// =====================
+// Cleanup on Page Unload
+// =====================
 window.addEventListener("unload", () => {
   if (synth.speaking) synth.cancel();
   cleanupHighlights();
