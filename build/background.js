@@ -1,4 +1,6 @@
+// =====================
 // Initialize text-to-speech when the extension is installed
+// =====================
 chrome.runtime.onInstalled.addListener(() => {
   chrome.tts.speak('Extension installed successfully', {
     lang: 'en-US',
@@ -9,11 +11,15 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// Global variables
+// =====================
+// Global Variables
+// =====================
 let currentLanguage = 'en-US';
 let isPaused = false;
 
-// Handle keyboard shortcuts
+// =====================
+// Handle Keyboard Shortcuts
+// =====================
 chrome.commands.onCommand.addListener((command) => {
   console.log('Command received:', command);
   
@@ -27,7 +33,9 @@ chrome.commands.onCommand.addListener((command) => {
   if (actions[command]) actions[command]();
 });
 
-// Function to send messages to the active tab
+// =====================
+// Function to Send Messages to Active Tab
+// =====================
 function sendMessageToActiveTab(message) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]?.id) {
@@ -36,7 +44,9 @@ function sendMessageToActiveTab(message) {
   });
 }
 
-// Handle messages from popup or content scripts
+// =====================
+// Handle Messages from Popup or Content Scripts
+// =====================
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const handlers = {
     resizePage: () => handleResizePage(request, sendResponse),
@@ -58,25 +68,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Handle resizing the page
+// =====================
+// Handle Resizing the Page
+// =====================
 function handleResizePage(request, sendResponse) {
   sendMessageToActiveTab({ action: 'resizePage', zoomLevel: request.zoomLevel });
 }
 
-// Update language settings
+// =====================
+// Update Language Settings
+// =====================
 function updateLanguage(request, sendResponse) {
   currentLanguage = request.language;
   sendResponse({ status: 'success', message: `Language updated to ${currentLanguage}` });
 }
 
-// Handle text-to-speech request via secure backend proxy
+// =====================
+// Handle Text-to-Speech Request via Secure Backend Proxy
+// =====================
 async function handleTextToSpeech(request, sendResponse) {
   const response = await googleTextToSpeech(request.text, request.lang || currentLanguage, request.rate, request.pitch, request.volume, request.voiceType);
   sendMessageToActiveTab({ action: 'startHighlighting', text: request.text, rate: request.rate });
   sendResponse(response);
 }
 
-// Google Text-to-Speech API call
+// =====================
+// Google Text-to-Speech API Call
+// =====================
 async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.0, voiceType = 'NEUTRAL') {
   const proxyUrl = 'http://localhost:3000/tts'; // Secure backend URL
   try {
@@ -100,7 +118,9 @@ async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.
   }
 }
 
-// Read webpage content tag by tag
+// =====================
+// Read Webpage Content Tag by Tag
+// =====================
 function handleReadTagByTag(request, sendResponse) {
   sendMessageToActiveTab({ action: 'getTags', tagName: request.tagName }, (response) => {
     if (response?.tags?.length) {
@@ -126,7 +146,9 @@ function handleReadTagByTag(request, sendResponse) {
   });
 }
 
-// Initialize transcription
+// =====================
+// Initialize Transcription
+// =====================
 function initializeTranscription() {
   if (!('webkitSpeechRecognition' in window)) {
     console.error('Speech recognition not supported');
