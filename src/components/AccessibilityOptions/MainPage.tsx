@@ -13,6 +13,7 @@ import SettingsView from "../views/SettingsView";
 import { ViewType } from "../../types";
 import VirtualImpairmentView from "../views/VirtualImpairmentView";
 
+
 export default function MainPage() {
   const [activeView, setActiveView] = useState<ViewType>("main");
 
