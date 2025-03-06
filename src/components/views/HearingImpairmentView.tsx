@@ -11,29 +11,26 @@ import { Button } from "../ui/button"
 import { BackButton, SettingHeader, StatusCard } from "../ui/common"
 import LanguageSelector from "../AccessibilityOptions/LanguageSelector"
 
-// 1) Import your main accessibility context for source/target language, autoTranslate, etc.
-// 2) Import the language context to derive display names
+// Import language context to derive the default language (source)
 import { useLanguage } from "../../context/language.context"
-// 3) Import the speech-to-text hook for actual transcription logic
-import { useSpeechToText } from "../../hooks/useSpeechToText"
+// Import accessibility context (which receives the default language)
 import { useAccessibility } from "../../context/AccessibilityContext"
+// Import the speech-to-text hook
+import { useSpeechToText } from "../../hooks/useSpeechToText"
 
 export default function HearingImpairmentView({ onBack }: ViewProps) {
-  // Access global accessibility settings
+  // Get global accessibility settings
   const {
-    sourceLanguage,
     targetLanguage,
     autoTranslate,
-    setSourceLanguage,
     setTargetLanguage,
     toggleAutoTranslate,
   } = useAccessibility()
 
-  // Get language options to derive a display name for the source language.
-  const { langOptions } = useLanguage()
-  const currentSourceOption = langOptions.find(option => option.value === sourceLanguage)
-  const currentSourceLanguageLabel = currentSourceOption ? currentSourceOption.lang : sourceLanguage
-
+ // Get the selected language from the global language context
+ const { selectedLanguage, langOptions } = useLanguage();
+ const currentLanguageOption = langOptions.find(option => option.value === selectedLanguage);
+ const currentLanguageLabel = currentLanguageOption ? currentLanguageOption.lang : selectedLanguage;
   // Use the custom speech-to-text hook
   const {
     isProcessing,
@@ -45,7 +42,7 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
   return (
     <motion.div variants={fadeInVariants} initial="initial" animate="animate" exit="exit" layout>
       <Card className="w-80 shadow-lg border-0 overflow-hidden relative">
-        {/* Decorative background elements */}
+        {/* Decorative background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
             initial={{ opacity: 0 }}
@@ -56,16 +53,16 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
           </motion.div>
         </div>
 
-        {/* Header with a new badge for Source Language */}
+        {/* Header displays a badge with the default language */}
         <CardHeader className="bg-green-600 text-white p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <BackButton onClick={onBack} />
               <span className="font-bold text-white text-lg">Hearing Impairment</span>
             </div>
-            {/* Badge showing the currently selected source language */}
+            {/* Badge showing the default language */}
             <div className="px-2 py-1 bg-white bg-opacity-30 backdrop-blur-sm rounded text-xs text-gray-800">
-              {currentSourceLanguageLabel}
+              {currentLanguageLabel}
             </div>
           </div>
         </CardHeader>
@@ -74,7 +71,6 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
           {/* Transcription Controls */}
           <div className="space-y-3">
             <SettingHeader icon={Mic} title="Transcription Controls" />
-
             <div className="flex justify-center">
               <AnimatePresence mode="wait">
                 {!isTranscribing ? (
@@ -131,13 +127,8 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
           {/* Language Settings */}
           <div className="space-y-4">
             <SettingHeader icon={Languages} title="Language Settings" />
-
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="text-base">Source Language</Label>
-                <LanguageSelector value={sourceLanguage} onChange={setSourceLanguage} />
-              </div>
-
+              {/* Instead of a separate source language input, we use the default language from MainCard */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-base flex items-center gap-2">
@@ -151,7 +142,6 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
                     className="bg-gray-200"
                   />
                 </div>
-
                 <AnimatePresence>
                   {autoTranslate && (
                     <motion.div
@@ -181,12 +171,7 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
               isActive={isTranscribing}
             />
           ) : (
-            <motion.div
-              key="help"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
+            <motion.div key="help" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               <CardFooter className="flex justify-between p-4 bg-gray-100">
                 <div className="text-sm text-muted-foreground text-center w-full">
                   Select your language preferences and press Start Transcribing to begin

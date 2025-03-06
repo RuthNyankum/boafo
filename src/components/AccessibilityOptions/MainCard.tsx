@@ -3,11 +3,7 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { Settings, Ear, EyeOff, Moon, HelpCircle, Languages } from "lucide-react"
-
-// Import your custom LanguageSelector component
 import LanguageSelector from "./LanguageSelector"
-
-// Import your language context – note we now also retrieve langOptions
 import { useLanguage } from "../../context/language.context"
 import { Button } from "../ui/button"
 import { Separator } from "../ui/separator"
@@ -32,12 +28,12 @@ export default function MainCard({
   // Control whether the language selector dropdown is open
   const [showLanguageSelector, setShowLanguageSelector] = useState(false)
 
-  // Get language context including the currently selected language and the options array
+  // Get language context values
   const { selectedLanguage, setSelectedLanguage, langOptions } = useLanguage()
 
-  // Derive the display name for the currently selected language
-  const currentLanguageOption = langOptions.find(option => option.value === selectedLanguage)
-  const currentLanguageLabel = currentLanguageOption ? currentLanguageOption.lang : selectedLanguage
+  // Derive display name from langOptions
+  const currentOption = langOptions.find(option => option.value === selectedLanguage)
+  const currentLanguageLabel = currentOption ? currentOption.lang : selectedLanguage
 
   return (
     <motion.div
@@ -54,11 +50,11 @@ export default function MainCard({
           <div className="flex items-center justify-between">
             <span className="font-bold text-white text-lg">Boafo</span>
             <div className="flex items-center gap-2">
-              {/* Display current language badge */}
+              {/* Badge displaying the current language */}
               <span className="text-xs text-white bg-black/20 px-2 py-1 rounded">
                 {currentLanguageLabel}
               </span>
-              {/* Language selector toggle button */}
+              {/* Toggle language selector */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -83,7 +79,7 @@ export default function MainCard({
             </div>
           </div>
 
-          {/* Show the language dropdown only if user clicked the globe icon */}
+          {/* Language selector dropdown */}
           {showLanguageSelector && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -101,9 +97,8 @@ export default function MainCard({
           )}
         </CardHeader>
 
-        {/* Main body with three feature buttons */}
+        {/* Main feature buttons */}
         <CardContent className="p-0">
-          {/* Hearing Impairment */}
           <Button
             variant="ghost"
             className="justify-start w-full rounded-none h-17 px-4 py-6 hover:bg-gray-50"
@@ -116,10 +111,7 @@ export default function MainCard({
               <span className="text-xs text-gray-500">Captions, audio enhancements</span>
             </div>
           </Button>
-
           <Separator />
-
-          {/* Visual Impairment */}
           <Button
             variant="ghost"
             className="justify-start w-full rounded-none h-17 px-4 py-6 hover:bg-gray-50"
@@ -132,10 +124,7 @@ export default function MainCard({
               <span className="text-xs text-gray-500">Screen reader, magnification</span>
             </div>
           </Button>
-
           <Separator />
-
-          {/* Eye Strain & Interface */}
           <Button
             variant="ghost"
             className="justify-start w-full rounded-none h-17 px-4 py-6 hover:bg-gray-50"

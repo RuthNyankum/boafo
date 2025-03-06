@@ -18,7 +18,7 @@ export default function LanguageSelector({ value, onChange}: LanguageSelectorPro
     onChange(newValue);
     const codes = getLanguageCodes(newValue);
 
-    // Update translation by injecting the translation script into the active tab
+    // Inject translation script into the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id) {
         chrome.scripting.executeScript({
@@ -30,7 +30,7 @@ export default function LanguageSelector({ value, onChange}: LanguageSelectorPro
       }
     });
 
-    // Also update language for background and content scripts (for speech recognition and TTS)
+    // Update language for speech recognition and TTS in background scripts
     chrome.runtime.sendMessage({ action: "updateLanguage", language: codes.speech });
   };
 

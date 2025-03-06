@@ -6,12 +6,12 @@ import { AnimatePresence } from "framer-motion";
 // Import the unified AccessibilityProvider
 import { AccessibilityProvider } from "../../context/AccessibilityContext";
 import MainCard from "./MainCard";
-import ScreenReaderView from "../views/ScreenReaderView";
 import HearingImpairmentView from "../views/HearingImpairmentView";
 import EyeStrainView from "../views/EyeStrainView";
 import HelpTutorialsView from "../views/HelpTutorialsView";
 import SettingsView from "../views/SettingsView";
 import { ViewType } from "../../types";
+import VirtualImpairmentView from "../views/VirtualImpairmentView";
 
 export default function MainPage() {
   const [activeView, setActiveView] = useState<ViewType>("main");
@@ -19,7 +19,7 @@ export default function MainPage() {
   const renderView = () => {
     switch (activeView) {
       case "screenReader":
-        return <ScreenReaderView onBack={() => setActiveView("main")} />;
+        return <VirtualImpairmentView onBack={() => setActiveView("main")} />;
       case "hearing":
         return <HearingImpairmentView onBack={() => setActiveView("main")} />;
       case "eyeStrain":

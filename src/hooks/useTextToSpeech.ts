@@ -3,30 +3,31 @@ import { readAloud, pauseReading, resumeReading, stopReading } from '../utils/te
 import { useLanguage } from '../context/language.context';
 import { useAccessibility } from '../context/AccessibilityContext';
 
+// This hook manages the Text-to-Speech state and actions.
 export const useTextToSpeech = () => {
+  // Global language setting from LanguageContext
   const { selectedLanguage } = useLanguage();
-  const { 
-    readerSpeed, 
-    readerVoice, 
-    setReaderSpeed 
-  } = useAccessibility();
+  // TTS settings from Accessibility context
+  const { readerSpeed, readerVoice, setReaderSpeed } = useAccessibility();
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isStopped, setIsStopped] = useState(true);
+  // Local state for process control
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [isStopped, setIsStopped] = useState<boolean>(true);
 
-  // Function to update the audio playback rate dynamically
+  // Function to update playback rate on the background (for live TTS changes)
   const updateAudioRate = useCallback((rate: number) => {
     chrome.runtime.sendMessage({ action: "updatePlaybackRate", rate });
   }, []);
 
+  // Starts the text-to-speech process using current language, rate, and voice.
   const handleTextToSpeech = useCallback(async () => {
     if (isProcessing || !isStopped) return;
     try {
       setIsProcessing(true);
       setIsStopped(false);
       setIsPaused(false);
-      // Start the TTS with the current reader speed and voice
+      // Start the TTS process
       await readAloud({ 
         language: selectedLanguage, 
         rate: readerSpeed, 
@@ -39,6 +40,7 @@ export const useTextToSpeech = () => {
     }
   }, [isProcessing, isStopped, selectedLanguage, readerSpeed, readerVoice]);
 
+  // Toggles between pausing and resuming TTS
   const handlePauseResume = useCallback(async () => {
     if (isStopped) return;
     try {
@@ -54,6 +56,7 @@ export const useTextToSpeech = () => {
     }
   }, [isPaused, isStopped]);
 
+  // Stops the TTS process
   const handleStopReading = useCallback(async () => {
     if (isStopped) return;
     try {
@@ -65,7 +68,7 @@ export const useTextToSpeech = () => {
     }
   }, [isStopped]);
 
-  // Increase the rate (capped at 2.0x)
+  // Increase the playback rate (capped at 2.0x)
   const increaseRate = useCallback(() => {
     const newRate = Math.min(readerSpeed + 0.1, 2.0);
     setReaderSpeed(newRate);
@@ -74,7 +77,7 @@ export const useTextToSpeech = () => {
     }
   }, [isStopped, readerSpeed, setReaderSpeed, updateAudioRate]);
 
-  // Decrease the rate (capped at 0.5x)
+  // Decrease the playback rate (capped at 0.5x)
   const decreaseRate = useCallback(() => {
     const newRate = Math.max(readerSpeed - 0.1, 0.5);
     setReaderSpeed(newRate);
