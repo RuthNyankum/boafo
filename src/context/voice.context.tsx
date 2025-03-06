@@ -1,4 +1,3 @@
-// context/voice.context.tsx
 import React, { createContext, useContext, useState } from 'react';
 
 type VoiceContextType = {

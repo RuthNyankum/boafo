@@ -1,15 +1,19 @@
 import { useCallback, useState } from 'react';
 import { readAloud, pauseReading, resumeReading, stopReading } from '../utils/textToSpeech';
 import { useLanguage } from '../context/language.context';
-import { useVoice } from '../context/voice.context';
+import { useAccessibility } from '../context/AccessibilityContext';
 
 export const useTextToSpeech = () => {
   const { selectedLanguage } = useLanguage();
+  const { 
+    readerSpeed, 
+    readerVoice, 
+    setReaderSpeed 
+  } = useAccessibility();
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isStopped, setIsStopped] = useState(true);
-  const [speechRate, setSpeechRate] = useState(1.0); 
-  const { selectedVoice } = useVoice();
 
   // Function to update the audio playback rate dynamically
   const updateAudioRate = useCallback((rate: number) => {
@@ -22,14 +26,18 @@ export const useTextToSpeech = () => {
       setIsProcessing(true);
       setIsStopped(false);
       setIsPaused(false);
-      // Start the TTS with the current speech rate.
-      await readAloud({ language: selectedLanguage, rate: speechRate,voiceType: selectedVoice });
+      // Start the TTS with the current reader speed and voice
+      await readAloud({ 
+        language: selectedLanguage, 
+        rate: readerSpeed, 
+        voiceType: readerVoice 
+      });
     } catch (error) {
       console.error("Text-to-speech error:", error);
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, isStopped, selectedLanguage, speechRate,selectedVoice]);
+  }, [isProcessing, isStopped, selectedLanguage, readerSpeed, readerVoice]);
 
   const handlePauseResume = useCallback(async () => {
     if (isStopped) return;
@@ -59,31 +67,27 @@ export const useTextToSpeech = () => {
 
   // Increase the rate (capped at 2.0x)
   const increaseRate = useCallback(() => {
-    setSpeechRate((prev) => {
-      const newRate = Math.min(prev + 0.1, 2.0);
-      if (!isStopped) {
-        updateAudioRate(newRate);
-      }
-      return newRate;
-    });
-  }, [isStopped, updateAudioRate]);
+    const newRate = Math.min(readerSpeed + 0.1, 2.0);
+    setReaderSpeed(newRate);
+    if (!isStopped) {
+      updateAudioRate(newRate);
+    }
+  }, [isStopped, readerSpeed, setReaderSpeed, updateAudioRate]);
 
   // Decrease the rate (capped at 0.5x)
   const decreaseRate = useCallback(() => {
-    setSpeechRate((prev) => {
-      const newRate = Math.max(prev - 0.1, 0.5);
-      if (!isStopped) {
-        updateAudioRate(newRate);
-      }
-      return newRate;
-    });
-  }, [isStopped, updateAudioRate]);
+    const newRate = Math.max(readerSpeed - 0.1, 0.5);
+    setReaderSpeed(newRate);
+    if (!isStopped) {
+      updateAudioRate(newRate);
+    }
+  }, [isStopped, readerSpeed, setReaderSpeed, updateAudioRate]);
 
   return { 
     isProcessing, 
     isPaused, 
     isStopped, 
-    speechRate, 
+    speechRate: readerSpeed, 
     handleTextToSpeech, 
     handlePauseResume, 
     handleStopReading,
