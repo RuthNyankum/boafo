@@ -48,10 +48,9 @@ export const readAloud = async ({
       throw new Error(`No text found to read in mode: ${mode}`);
     }
 
-    // Convert using mapping for TTS
+    // Map the language code for TTS (using global language)
     const languageCodes = getLanguageCodes(language);
 
-    // Send message to background for Google TTS processing including rate, pitch, and volume
     return await sendMessageToBackground({
       action: "readText",
       text,

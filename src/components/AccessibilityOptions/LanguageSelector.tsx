@@ -1,64 +1,72 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { ChevronsUpDown } from "lucide-react";
+import { useLanguage } from "../../context/language.context";
 import { getLanguageCodes } from "../../utils/languageMapping";
-import { LanguageOption } from "../../types/accessibility";
 import { translateText } from "../../utils/translate";
 
 interface LanguageSelectorProps {
-  langOptions: LanguageOption[];
-  selectedLanguage: string;
-  setSelectedLanguage: (language: string) => void;
-  isFeatureView?: boolean; 
+  value: string;
+  onChange: (value: string) => void;
+  isFeatureView?: boolean;
 }
 
-const LanguageSelector: React.FC<LanguageSelectorProps> = ({
-  langOptions,
-  selectedLanguage,
-  setSelectedLanguage,
-  isFeatureView = false,
-}) => {
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = e.target.value;
-    setSelectedLanguage(selected);
-    const languageCodes = getLanguageCodes(selected);
+export default function LanguageSelector({ value, onChange}: LanguageSelectorProps) {
+  const { langOptions } = useLanguage();
 
-    // Update translation by injecting the translation script with the mapped translation code.
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newValue = e.target.value;
+    onChange(newValue);
+    const codes = getLanguageCodes(newValue);
+
+    // Update translation by injecting the translation script into the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id) {
         chrome.scripting.executeScript({
           target: { tabId: tabs[0].id },
           world: "MAIN",
           func: translateText,
-          args: [languageCodes.translate],
+          args: [codes.translate],
         });
       }
     });
 
     // Also update language for background and content scripts (for speech recognition and TTS)
-    chrome.runtime.sendMessage({ action: "updateLanguage", language: languageCodes.speech });
+    chrome.runtime.sendMessage({ action: "updateLanguage", language: codes.speech });
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3, duration: 0.3 }}
-      className={`mt-4 flex ${isFeatureView ? "justify-center" : "justify-end"}`}
-    >
+    <div className="relative mt-2">
       <select
         id="language"
-        value={selectedLanguage}
-        className={`bg-gray-100 rounded-md border-none focus:ring-1 focus:ring-blue-200 ${isFeatureView ? "text-lg p-3" : "text-sm p-2"}`}
-        onChange={handleLanguageChange}
+        value={value}
+        onChange={handleChange}
+        className="
+          w-full
+          h-10
+          px-3
+          pr-8
+          text-sm
+          text-gray-800
+          bg-gray-100
+          border
+          border-gray-300
+          rounded-md
+          appearance-none
+          focus:outline-none
+          focus:ring-1
+          focus:ring-green-300
+        "
       >
-        {langOptions.map((option, index) => (
-          <option key={index} value={option.value}>
+        {langOptions.map((option) => (
+          <option key={option.value} value={option.value}>
             {option.lang}
           </option>
         ))}
       </select>
-    </motion.div>
+      <ChevronsUpDown
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+        size={18}
+      />
+    </div>
   );
-};
-
-export default LanguageSelector;
+}

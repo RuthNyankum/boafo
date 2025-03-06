@@ -17,5 +17,5 @@
     "jsx": "react-jsx",
     "types": ["chrome"]
   },
-  "include": ["src", "server"]
+  "include": ["src", "server", "public/googleTranslateInit.js"]
 }
