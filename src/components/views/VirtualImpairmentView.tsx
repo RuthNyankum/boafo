@@ -1,8 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Square, Waves, Settings2, Speaker, Mic2, Volume2 } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Square,
+  Waves,
+  Settings2,
+  Speaker,
+  Mic2,
+  Volume2,
+} from "lucide-react";
 import { useTextToSpeech } from "../../hooks/useTextToSpeech";
 import { useAccessibility } from "../../context/AccessibilityContext";
 import { ViewProps } from "../../types";
@@ -22,18 +30,18 @@ import {
 import { useLanguage } from "../../context/language.context";
 
 export default function VirtualImpairmentView({ onBack }: ViewProps) {
-  // Local state for TTS status
-  const [isReading, setIsReading] = useState(false);
-
-  // Get the selected language from the global language context
   const { selectedLanguage, langOptions } = useLanguage();
-  const currentLanguageOption = langOptions.find(option => option.value === selectedLanguage);
-  const currentLanguageLabel = currentLanguageOption ? currentLanguageOption.lang : selectedLanguage;
+  const currentLanguageOption = langOptions.find(
+    (option) => option.value === selectedLanguage
+  );
+  const currentLanguageLabel = currentLanguageOption
+    ? currentLanguageOption.lang
+    : selectedLanguage;
 
-    // Global settings for TTS (reading speed, voice, etc.)
-  const { readerSpeed, setReaderSpeed, readerVoice, setReaderVoice } = useAccessibility();
+  const { readerSpeed, setReaderSpeed, readerVoice, setReaderVoice } =
+    useAccessibility();
 
-  // TTS hook (uses selectedLanguage, readerSpeed, and selectedVoice)
+  // Destructure states and functions directly from the hook
   const {
     isProcessing,
     isPaused,
@@ -44,13 +52,14 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
     handleStopReading,
   } = useTextToSpeech();
 
-  // Control functions
+  // Determine if reading is active: reading is active when not stopped.
+  const isReading = !isStopped;
+
+  // Control functions use the hook's functions directly.
   const startReading = () => {
-    setIsReading(true);
     handleTextToSpeech();
   };
 
-  // Toggle function now calls the proper function based on the current state.
   const togglePlayPause = () => {
     if (isPaused) {
       handleResumeReading();
@@ -60,12 +69,17 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
   };
 
   const stopReading = () => {
-    setIsReading(false);
     handleStopReading();
   };
 
   return (
-    <motion.div variants={fadeInVariants} initial="initial" animate="animate" exit="exit" layout>
+    <motion.div
+      variants={fadeInVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      layout
+    >
       <Card className="w-80 shadow-lg border-0 overflow-hidden relative">
         {/* Decorative background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -85,13 +99,14 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
           </motion.div>
         </div>
 
-       {/* Header */}
-       <CardHeader className="bg-green-600 text-white p-4 flex flex-row items-center justify-between">
+        {/* Header */}
+        <CardHeader className="bg-green-600 text-white p-4 flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
             <BackButton onClick={onBack} />
-            <span className="font-bold text-white text-lg">Virtual Impairment</span>
+            <span className="font-bold text-white text-lg">
+              Virtual Impairment
+            </span>
           </div>
-          {/* Badge showing the selected language */}
           <div className="px-2 py-1 bg-white bg-opacity-30 backdrop-blur-sm rounded text-xs text-gray-800">
             {currentLanguageLabel}
           </div>
@@ -99,7 +114,6 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
 
         {/* Main Content */}
         <CardContent className="p-6 space-y-6 relative">
-          {/* Screen Reader Controls */}
           <div className="space-y-3">
             <SettingHeader icon={Mic2} title="Screen Reader Controls" />
             <div className="flex justify-center gap-3">
@@ -123,7 +137,11 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
                       <motion.div
                         className="absolute inset-0 bg-green-600/10"
                         animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
-                        transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: "easeOut" }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Number.POSITIVE_INFINITY,
+                          ease: "easeOut",
+                        }}
                       />
                       <Play className="h-5 w-5 mr-2" />
                       {isProcessing ? "Starting..." : "Start Reading"}
@@ -143,14 +161,24 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
                       size="lg"
                       className="h-14 w-14 hover:bg-blue-400 hover:text-white rounded-full border-2 focus:ring-4 focus:ring-green-300 relative"
                       onClick={togglePlayPause}
-                      aria-label={isPaused ? "Resume screen reader" : "Pause screen reader"}
+                      aria-label={
+                        isPaused ? "Resume screen reader" : "Pause screen reader"
+                      }
                     >
                       <motion.div
                         className="absolute inset-0 rounded-full border-2 border-green-300/30"
                         animate={{ scale: [1, 1.2], opacity: [0.3, 0] }}
-                        transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "easeOut" }}
+                        transition={{
+                          duration: 1,
+                          repeat: Number.POSITIVE_INFINITY,
+                          ease: "easeOut",
+                        }}
                       />
-                      {isPaused ? <Play className="h-6 w-6" /> : <Pause className="h-6 w-6" />}
+                      {isPaused ? (
+                        <Play className="h-6 w-6" />
+                      ) : (
+                        <Pause className="h-6 w-6" />
+                      )}
                     </Button>
                     <Button
                       variant="destructive"
@@ -175,9 +203,15 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
                 >
                   <motion.div
                     animate={{ opacity: [1, 0.5, 1] }}
-                    transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Number.POSITIVE_INFINITY,
+                      ease: "easeInOut",
+                    }}
                   >
-                    {isPaused ? "Reading paused" : "Currently reading page content..."}
+                    {isPaused
+                      ? "Reading paused"
+                      : "Currently reading page content..."}
                   </motion.div>
                 </motion.div>
               )}
@@ -187,7 +221,10 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
           {/* Reading Speed Control */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <Label htmlFor="speed-slider" className="text-base font-medium flex items-center gap-2">
+              <Label
+                htmlFor="speed-slider"
+                className="text-base font-medium flex items-center gap-2"
+              >
                 <Settings2 className="text-blue-600 h-4 w-4" />
                 Reading Speed
               </Label>
@@ -218,16 +255,28 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
 
           {/* Speaker Selection */}
           <div className="space-y-3">
-            <Label htmlFor="speaker-select" className="text-base font-medium flex items-center gap-2">
+            <Label
+              htmlFor="speaker-select"
+              className="text-base font-medium flex items-center gap-2"
+            >
               <Volume2 className="text-blue-600 h-4 w-4" />
               Speaker Voice
             </Label>
-            <Select value={readerVoice} onValueChange={setReaderVoice} aria-label="Select speaker voice">
-              <SelectTrigger id="speaker-select" className="w-full h-12 text-base outline-none">
+            <Select
+              value={readerVoice}
+              onValueChange={setReaderVoice}
+              aria-label="Select speaker voice"
+            >
+              <SelectTrigger
+                id="speaker-select"
+                className="w-full h-12 text-base outline-none"
+              >
                 <SelectValue placeholder="Select a voice" />
               </SelectTrigger>
               <SelectContent className="bg-white">
-                <SelectItem value="neutral">Neutral Voice (Default)</SelectItem>
+                <SelectItem value="neutral">
+                  Neutral Voice (Default)
+                </SelectItem>
                 <SelectItem value="female">Female Voice</SelectItem>
                 <SelectItem value="male">Male Voice</SelectItem>
               </SelectContent>
@@ -248,7 +297,12 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
               isActive={!isStopped && !isPaused}
             />
           ) : (
-            <motion.div key="help" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <motion.div
+              key="help"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+            >
               <CardFooter className="flex justify-between p-4 bg-gray-100">
                 <div className="text-sm text-muted-foreground text-center w-full">
                   Configure your preferences and press Start Reading to begin

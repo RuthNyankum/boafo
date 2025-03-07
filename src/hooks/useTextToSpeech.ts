@@ -40,39 +40,48 @@ export const useTextToSpeech = () => {
     }
   }, [isProcessing, isStopped, selectedLanguage, readerSpeed, readerVoice]);
 
- // Separate pause function.
- const handlePauseReading = useCallback(async () => {
-  if (isStopped || isPaused) return;
-  try {
-    await pauseReading();
+  // Pauses the TTS process
+  const handlePauseReading = useCallback(async () => {
+    if (isStopped || isPaused) return;
+    // Update state immediately to reflect the pause (icon will change to Play)
     setIsPaused(true);
-  } catch (error) {
-    console.error("Error pausing reading:", error);
-  }
-}, [isStopped, isPaused]);
-
-// Separate resume function.
-const handleResumeReading = useCallback(async () => {
-  if (isStopped || !isPaused) return;
-  try {
-    await resumeReading();
-    setIsPaused(false);
-  } catch (error) {
-    console.error("Error resuming reading:", error);
-  }
-}, [isStopped, isPaused]);
+    try {
+      await pauseReading();
+    } catch (error) {
+      console.error("Error pausing reading:", error);
+      // Revert state if there is an error
+      setIsPaused(false);
+    }
+  }, [isStopped, isPaused]);
   
-  // Stops the TTS process
+  // Resumes the TTS process if it was paused
+  const handleResumeReading = useCallback(async () => {
+    if (isStopped || !isPaused) return;
+    // Update state immediately to reflect resume (icon will change to Pause)
+    setIsPaused(false);
+    try {
+      await resumeReading();
+    } catch (error) {
+      console.error("Error resuming reading:", error);
+      // Revert state if there is an error
+      setIsPaused(true);
+    }
+  }, [isStopped, isPaused]);
+  
+  // Stops the TTS process and resets the state
   const handleStopReading = useCallback(async () => {
     if (isStopped) return;
+    // Update states immediately to reflect stop
+    setIsStopped(true);
+    setIsPaused(false);
     try {
       await stopReading();
-      setIsStopped(true);
-      setIsPaused(false);
     } catch (error) {
       console.error("Error stopping reading:", error);
+      // You might choose to revert state or handle error appropriately
     }
   }, [isStopped]);
+  
 
   // Increase the playback rate (capped at 2.0x)
   const increaseRate = useCallback(() => {
