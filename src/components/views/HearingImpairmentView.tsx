@@ -13,12 +13,14 @@ import LanguageSelector from "../AccessibilityOptions/LanguageSelector";
 import { useLanguage } from "../../context/language.context";
 import { useAccessibility } from "../../context/AccessibilityContext";
 import { useSpeechToText } from "../../hooks/useSpeechToText";
+import { injectTranslation } from "../../hooks/languageTranslation";
 
 export default function HearingImpairmentView({ onBack }: ViewProps) {
   const { targetLanguage, autoTranslate, setTargetLanguage, toggleAutoTranslate } =
     useAccessibility();
 
-  const { selectedLanguage, langOptions } = useLanguage();
+  // Ensure useLanguage provides a setter for selectedLanguage
+  const { selectedLanguage, langOptions, setSelectedLanguage } = useLanguage();
   const currentLanguageOption = langOptions.find(
     (option) => option.value === selectedLanguage
   );
@@ -40,10 +42,10 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
   // Determine if transcription is active
   const isTranscribing = !isStopped;
 
-  // control functions use the hook's functions directly 
+  // Control functions
   const startTranscription = () => {
     handleSpeechToText();
-  }
+  };
 
   const togglePlayPause = () => {
     if (isPaused) {
@@ -51,11 +53,11 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
     } else {
       handlePauseTranscription();
     }
-  }
+  };
 
   const stopTranscription = () => {
     handleStopTranscription();
-  }
+  };
 
   return (
     <motion.div variants={fadeInVariants} initial="initial" animate="animate" exit="exit" layout>
@@ -129,24 +131,14 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
                       size="lg"
                       className="h-14 w-14 hover:bg-blue-400 hover:text-white rounded-full border-2 focus:ring-4 focus:ring-green-300 relative"
                       onClick={togglePlayPause}
-                      aria-label={
-                        isPaused ? "Resume transcription" : "Pause transcription"
-                      }
+                      aria-label={isPaused ? "Resume transcription" : "Pause transcription"}
                     >
                       <motion.div
                         className="absolute inset-0 rounded-full border-2 border-green-300/30"
                         animate={{ scale: [1, 1.2], opacity: [0.3, 0] }}
-                        transition={{
-                          duration: 1,
-                          repeat: Number.POSITIVE_INFINITY,
-                          ease: "easeOut",
-                        }}
+                        transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "easeOut" }}
                       />
-                      {isPaused ? (
-                        <Play className="h-6 w-6" />
-                      ) : (
-                        <Pause className="h-6 w-6" />
-                      )}
+                      {isPaused ? <Play className="h-6 w-6" /> : <Pause className="h-6 w-6" />}
                     </Button>
                     <Button
                       variant="destructive"
@@ -167,6 +159,13 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
           <div className="space-y-4">
             <SettingHeader icon={Languages} title="Language Settings" />
             <div className="space-y-3">
+              <Label className="text-base">Source Language</Label>
+              <LanguageSelector
+                value={selectedLanguage}
+                onChange={(value) => {
+                  setSelectedLanguage(value);
+                }}
+              />
               <div className="flex items-center justify-between">
                 <Label className="text-base flex items-center gap-2">
                   <Wand2 className="h-4 w-4 text-blue-600" />
@@ -189,7 +188,13 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
                   >
                     <div className="space-y-2 pt-2">
                       <Label className="text-base">Target Language</Label>
-                      <LanguageSelector value={targetLanguage} onChange={setTargetLanguage} />
+                      <LanguageSelector
+                        value={targetLanguage}
+                        onChange={(value) => {
+                          setTargetLanguage(value);
+                          injectTranslation(value); // Apply translation for target language as well
+                        }}
+                      />
                     </div>
                   </motion.div>
                 )}
