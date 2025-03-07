@@ -28,9 +28,10 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useLanguage } from "../../context/language.context";
+import LanguageSelector from "../AccessibilityOptions/LanguageSelector";
 
 export default function VirtualImpairmentView({ onBack }: ViewProps) {
-  const { selectedLanguage, langOptions } = useLanguage();
+  const { selectedLanguage, langOptions, setSelectedLanguage } = useLanguage();
   const currentLanguageOption = langOptions.find(
     (option) => option.value === selectedLanguage
   );
@@ -114,6 +115,7 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
 
         {/* Main Content */}
         <CardContent className="p-6 space-y-6 relative">
+          {/* Screen Reader Controls */}
           <div className="space-y-3">
             <SettingHeader icon={Mic2} title="Screen Reader Controls" />
             <div className="flex justify-center gap-3">
@@ -282,6 +284,15 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Source Language Selection */}
+          <div className="space-y-3">
+            <Label className="text-base">Source Language</Label>
+            <LanguageSelector
+              value={selectedLanguage}
+              onChange={(value) => setSelectedLanguage(value)}
+            />
+          </div>
         </CardContent>
 
         {/* Footer */}
@@ -292,7 +303,9 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
               statusText={
                 isPaused
                   ? "Paused"
-                  : `Reading at ${readerSpeed.toFixed(1)}x speed with ${readerVoice} voice`
+                  : `Reading at ${readerSpeed.toFixed(
+                      1
+                    )}x speed with ${readerVoice} voice`
               }
               isActive={!isStopped && !isPaused}
             />
