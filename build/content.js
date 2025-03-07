@@ -249,7 +249,7 @@ function stopTranscription() {
   }
   accumulatedTranscript = "";
   if (transcriptionDiv) {
-    transcriptionDiv.style.display = "none";
+    transcriptionDiv.remove();
   }
   isPaused = true;
 }
