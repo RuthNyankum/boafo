@@ -166,7 +166,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   };
 
   const resetAllSettings = () => {
-    setState(defaultState);
+    setState(defaultState);   
   };
 
   const value: AccessibilityContextType = {
