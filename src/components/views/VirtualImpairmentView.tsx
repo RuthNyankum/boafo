@@ -286,7 +286,7 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
           </div>
 
           {/* Source Language Selection */}
-          <div className="space-y-3">
+          <div className="">
             <Label className="text-base">Source Language</Label>
             <LanguageSelector
               value={selectedLanguage}
