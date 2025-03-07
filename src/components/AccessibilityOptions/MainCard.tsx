@@ -9,6 +9,7 @@ import { Button } from "../ui/button"
 import { Separator } from "../ui/separator"
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card"
 import { fadeInVariants } from "../ui/animations"
+import { injectTranslation } from "../../hooks/languageTranslation"
 
 interface MainCardProps {
   onScreenReaderClick: () => void
@@ -90,7 +91,9 @@ export default function MainCard({
                 value={selectedLanguage}
                 onChange={(value) => {
                   setSelectedLanguage(value)
-                  setShowLanguageSelector(false)
+                  setShowLanguageSelector(false);
+                  // Inject translation to the active tab
+                  injectTranslation(value);
                 }}
               />
             </motion.div>

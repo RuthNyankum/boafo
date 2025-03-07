@@ -1,8 +1,8 @@
+// src/components/LanguageSelector/LanguageSelector.tsx
 import React from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { useLanguage } from "../../context/language.context";
 import { getLanguageCodes } from "../../utils/languageMapping";
-import { translateText } from "../../utils/translate";
 
 interface LanguageSelectorProps {
   value: string;
@@ -10,25 +10,13 @@ interface LanguageSelectorProps {
   isFeatureView?: boolean;
 }
 
-export default function LanguageSelector({ value, onChange}: LanguageSelectorProps) {
+export default function LanguageSelector({ value, onChange }: LanguageSelectorProps) {
   const { langOptions } = useLanguage();
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newValue = e.target.value;
     onChange(newValue);
     const codes = getLanguageCodes(newValue);
-
-    // Inject translation script into the active tab
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]?.id) {
-        chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          world: "MAIN",
-          func: translateText,
-          args: [codes.translate],
-        });
-      }
-    });
 
     // Update language for speech recognition and TTS in background scripts
     chrome.runtime.sendMessage({ action: "updateLanguage", language: codes.speech });
