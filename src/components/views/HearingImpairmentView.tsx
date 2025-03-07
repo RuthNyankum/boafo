@@ -20,13 +20,13 @@ import { useSpeechToText } from "../../hooks/useSpeechToText";
 
 export default function HearingImpairmentView({ onBack }: ViewProps) {
   // Get global accessibility settings (now uses interfaceLanguage for consistency)
-  const { interfaceLanguage, targetLanguage, autoTranslate, setTargetLanguage, toggleAutoTranslate } =
+  const { targetLanguage, autoTranslate, setTargetLanguage, toggleAutoTranslate } =
     useAccessibility();
 
-  // Get language options for display
-  const { langOptions } = useLanguage();
-  const currentLanguageLabel = langOptions.find((option) => option.value === interfaceLanguage)?.lang || interfaceLanguage;
-
+  // Get the selected language from the global language context
+  const { selectedLanguage, langOptions } = useLanguage();
+  const currentLanguageOption = langOptions.find(option => option.value === selectedLanguage);
+  const currentLanguageLabel = currentLanguageOption ? currentLanguageOption.lang : selectedLanguage;
   // Use speech-to-text hook
   const { isProcessing, isTranscribing, handleSpeechToText, handleStopTranscription } = useSpeechToText();
 
