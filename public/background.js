@@ -108,7 +108,7 @@ async function handleTextToSpeech(request, sendResponse) {
 // Google Text-to-Speech API Call
 // =====================
 async function googleTextToSpeech(text, lang, rate = 1.0, pitch = 0, volume = 1.0, voiceType = 'NEUTRAL') {
-  const proxyUrl = 'http://localhost:3000/tts'; // Secure backend URL
+  const proxyUrl = 'https://boafo-accessibility-services-production.up.railway.app/tts'; // Secure backend URL
   try {
     const response = await fetch(proxyUrl, {
       method: 'POST',
