@@ -40,22 +40,28 @@ export const useTextToSpeech = () => {
     }
   }, [isProcessing, isStopped, selectedLanguage, readerSpeed, readerVoice]);
 
-  // Toggles between pausing and resuming TTS
-  const handlePauseResume = useCallback(async () => {
-    if (isStopped) return;
-    try {
-      if (isPaused) {
-        await resumeReading();
-        setIsPaused(false);
-      } else {
-        await pauseReading();
-        setIsPaused(true);
-      }
-    } catch (error) {
-      console.error("Error toggling pause/resume:", error);
-    }
-  }, [isPaused, isStopped]);
+ // Separate pause function.
+ const handlePauseReading = useCallback(async () => {
+  if (isStopped || isPaused) return;
+  try {
+    await pauseReading();
+    setIsPaused(true);
+  } catch (error) {
+    console.error("Error pausing reading:", error);
+  }
+}, [isStopped, isPaused]);
 
+// Separate resume function.
+const handleResumeReading = useCallback(async () => {
+  if (isStopped || !isPaused) return;
+  try {
+    await resumeReading();
+    setIsPaused(false);
+  } catch (error) {
+    console.error("Error resuming reading:", error);
+  }
+}, [isStopped, isPaused]);
+  
   // Stops the TTS process
   const handleStopReading = useCallback(async () => {
     if (isStopped) return;
@@ -92,7 +98,8 @@ export const useTextToSpeech = () => {
     isStopped, 
     speechRate: readerSpeed, 
     handleTextToSpeech, 
-    handlePauseResume, 
+    handlePauseReading, 
+    handleResumeReading, 
     handleStopReading,
     increaseRate,
     decreaseRate

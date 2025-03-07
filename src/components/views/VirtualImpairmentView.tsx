@@ -24,7 +24,6 @@ import { useLanguage } from "../../context/language.context";
 export default function VirtualImpairmentView({ onBack }: ViewProps) {
   // Local state for TTS status
   const [isReading, setIsReading] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
 
   // Get the selected language from the global language context
   const { selectedLanguage, langOptions } = useLanguage();
@@ -37,27 +36,31 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
   // TTS hook (uses selectedLanguage, readerSpeed, and selectedVoice)
   const {
     isProcessing,
+    isPaused,
     isStopped,
     handleTextToSpeech,
-    handlePauseResume,
+    handlePauseReading,
+    handleResumeReading,
     handleStopReading,
   } = useTextToSpeech();
 
   // Control functions
   const startReading = () => {
     setIsReading(true);
-    setIsPaused(false);
     handleTextToSpeech();
   };
 
+  // Toggle function now calls the proper function based on the current state.
   const togglePlayPause = () => {
-    setIsPaused((prev) => !prev);
-    handlePauseResume();
+    if (isPaused) {
+      handleResumeReading();
+    } else {
+      handlePauseReading();
+    }
   };
 
   const stopReading = () => {
     setIsReading(false);
-    setIsPaused(false);
     handleStopReading();
   };
 
