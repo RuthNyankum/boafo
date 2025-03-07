@@ -15,6 +15,7 @@ export const useSpeechToText = () => {
       const response = await startTranscription({ language: selectedLanguage });
       if (response.status === 'success') {
         setIsTranscribing(true);
+        setIsPaused(false);
       }
     } catch (error) {
       console.error("Speech-to-text error:", error);
@@ -24,30 +25,36 @@ export const useSpeechToText = () => {
   }, [isProcessing, isTranscribing, selectedLanguage]);
 
   const handleStopTranscription = useCallback(async () => {
+    // Optimistically update state immediately
+    setIsTranscribing(false);
+    setIsPaused(false);
     try {
       await stopTranscription();
-      setIsTranscribing(false);
-      setIsPaused(false);
     } catch (error) {
       console.error("Error stopping transcription:", error);
+      // Optionally revert state here if needed
     }
   }, []);
 
   const handlePauseTranscription = useCallback(async () => {
+    // Optimistically update state so UI shows pause immediately
+    setIsPaused(true);
     try {
       await pauseTranscription();
-      setIsPaused(true);
     } catch (error) {
       console.error("Error pausing transcription:", error);
+      setIsPaused(false);
     }
   }, []);
 
   const handleResumeTranscription = useCallback(async () => {
+    // Optimistically update state so UI shows resume immediately
+    setIsPaused(false);
     try {
       await resumeTranscription();
-      setIsPaused(false);
     } catch (error) {
       console.error("Error resuming transcription:", error);
+      setIsPaused(true);
     }
   }, []);
 

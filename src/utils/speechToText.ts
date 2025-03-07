@@ -5,7 +5,7 @@ export const startTranscription = async (
   options: TranscriptionOptions = {}
 ): Promise<TranscriptionResponse> => {
   try {
-    // Convert using mapping for speech-to-text
+    // Use language mapping to get the correct speech-to-text code
     const languageCodes = getLanguageCodes(options.language || 'en-US');
     const response = await chrome.runtime.sendMessage({ 
       type: 'START_TRANSCRIPTION',
