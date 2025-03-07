@@ -221,7 +221,7 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
           </div>
 
           {/* Reading Speed Control */}
-          <div className="space-y-3">
+          <div className={`space-y-3 ${isStopped ? "" : "hidden"}`}>
             <div className="flex justify-between items-center">
               <Label
                 htmlFor="speed-slider"
@@ -255,38 +255,47 @@ export default function VirtualImpairmentView({ onBack }: ViewProps) {
             </div>
           </div>
 
-          {/* Speaker Selection */}
-          <div className="space-y-3">
-            <Label
-              htmlFor="speaker-select"
-              className="text-base font-medium flex items-center gap-2"
-            >
-              <Volume2 className="text-blue-600 h-4 w-4" />
-              Speaker Voice
-            </Label>
-            <Select
-              value={readerVoice}
-              onValueChange={setReaderVoice}
-              aria-label="Select speaker voice"
-            >
-              <SelectTrigger
-                id="speaker-select"
-                className="w-full h-12 text-base outline-none"
+          {/* Speaker Selection - Only visible when stopped */}
+          <AnimatePresence>
+            {isStopped && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-3 overflow-hidden"
               >
-                <SelectValue placeholder="Select a voice" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                <SelectItem value="neutral">
-                  Neutral Voice (Default)
-                </SelectItem>
-                <SelectItem value="female">Female Voice</SelectItem>
-                <SelectItem value="male">Male Voice</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                <Label
+                  htmlFor="speaker-select"
+                  className="text-base font-medium flex items-center gap-2"
+                >
+                  <Volume2 className="text-blue-600 h-4 w-4" />
+                  Speaker Voice
+                </Label>
+                <Select
+                  value={readerVoice}
+                  onValueChange={setReaderVoice}
+                  aria-label="Select speaker voice"
+                >
+                  <SelectTrigger
+                    id="speaker-select"
+                    className="w-full h-12 text-base outline-none"
+                  >
+                    <SelectValue placeholder="Select a voice" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    <SelectItem value="neutral">
+                      Neutral Voice (Default)
+                    </SelectItem>
+                    <SelectItem value="female">Female Voice</SelectItem>
+                    <SelectItem value="male">Male Voice</SelectItem>
+                  </SelectContent>
+                </Select>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Source Language Selection */}
-          <div className="">
+          <div className={`${isStopped ? "" : "hidden"}`}>
             <Label className="text-base">Source Language</Label>
             <LanguageSelector
               value={selectedLanguage}
