@@ -55,53 +55,42 @@ export const stopTranscription = async (): Promise<TranscriptionResponse> => {
     };
   }
 };
-
 export const pauseTranscription = async (): Promise<TranscriptionResponse> => {
-  try {
-    const response = await chrome.runtime.sendMessage({ 
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ 
       type: 'PAUSE_TRANSCRIPTION'
+    }, (response) => {
+      if (response?.status === 'success') {
+        resolve({
+          status: 'success',
+          message: 'Speech recognition paused'
+        });
+      } else {
+        resolve({
+          status: 'error',
+          message: response?.message || 'Failed to pause speech recognition'
+        });
+      }
     });
-    
-    if (response?.status === 'success') {
-      return {
-        status: 'success',
-        message: 'Speech recognition paused'
-      };
-    } else {
-      return {
-        status: 'error',
-        message: response?.message || 'Failed to pause speech recognition'
-      };
-    }
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
-  }
+  });
 };
 
 export const resumeTranscription = async (): Promise<TranscriptionResponse> => {
-  try {
-    const response = await chrome.runtime.sendMessage({ 
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ 
       type: 'RESUME_TRANSCRIPTION'
+    }, (response) => {
+      if (response?.status === 'success') {
+        resolve({
+          status: 'success',
+          message: 'Speech recognition resumed'
+        });
+      } else {
+        resolve({
+          status: 'error',
+          message: response?.message || 'Failed to resume speech recognition'
+        });
+      }
     });
-    
-    if (response?.status === 'success') {
-      return {
-        status: 'success',
-        message: 'Speech recognition resumed'
-      };
-    } else {
-      return {
-        status: 'error',
-        message: response?.message || 'Failed to resume speech recognition'
-      };
-    }
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
-  }
+  });
 };

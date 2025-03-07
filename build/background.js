@@ -36,10 +36,12 @@ chrome.commands.onCommand.addListener((command) => {
 // =====================
 // Function to Send Messages to Active Tab
 // =====================
-function sendMessageToActiveTab(message) {
+function sendMessageToActiveTab(message, callback) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]?.id) {
-      chrome.tabs.sendMessage(tabs[0].id, message);
+      chrome.tabs.sendMessage(tabs[0].id, message, callback);
+    } else if (callback) {
+      callback({ status: 'error', message: 'No active tab found' });
     }
   });
 }
@@ -57,8 +59,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     stopReading: () => sendMessageToActiveTab({ action: 'stopAudio' }),
     readTagByTag: () => handleReadTagByTag(request, sendResponse),
     START_TRANSCRIPTION: () => sendMessageToActiveTab({ type: 'START_TRANSCRIPTION', language: request.language }),
-    PAUSE_TRANSCRIPTION: () => isPaused = true,
-    RESUME_TRANSCRIPTION: () => isPaused = false,
+    PAUSE_TRANSCRIPTION: () => {
+      sendMessageToActiveTab({ type: 'PAUSE_TRANSCRIPTION' }, (response) => {
+        sendResponse(response || { status: 'success', message: 'Transcription pause requested' });
+      });
+      isPaused = true;
+    },
+    RESUME_TRANSCRIPTION: () => {
+      sendMessageToActiveTab({ type: 'RESUME_TRANSCRIPTION' }, (response) => {
+        sendResponse(response || { status: 'success', message: 'Transcription resume requested' });
+      });
+      isPaused = false;
+    },
     STOP_TRANSCRIPTION: () => isPaused = false,
   };
 

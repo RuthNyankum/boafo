@@ -366,6 +366,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+   // Add specific handlers for pause/resume
+   if (request.type === "PAUSE_TRANSCRIPTION") {
+    pauseTranscription();
+    sendResponse({ status: "success", message: "Transcription paused" });
+    return true;
+  }
+
+  if (request.type === "RESUME_TRANSCRIPTION") {
+    resumeTranscription();
+    sendResponse({ status: "success", message: "Transcription resumed" });
+    return true;
+  }
+  
   // Stop Transcription
   if (request.type === "STOP_TRANSCRIPTION") {
     stopTranscription();
