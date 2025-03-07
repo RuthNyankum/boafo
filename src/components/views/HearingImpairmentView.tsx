@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Languages, Wand2, SwitchCamera, Play, Pause } from "lucide-react";
+import { Mic, Languages, Wand2, Play, Pause, Square } from "lucide-react";
 import { ViewProps } from "../../types";
 import { fadeInVariants } from "../ui/animations";
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
@@ -15,27 +15,58 @@ import { useAccessibility } from "../../context/AccessibilityContext";
 import { useSpeechToText } from "../../hooks/useSpeechToText";
 
 export default function HearingImpairmentView({ onBack }: ViewProps) {
-  const { targetLanguage, autoTranslate, setTargetLanguage, toggleAutoTranslate } = useAccessibility();
+  const { targetLanguage, autoTranslate, setTargetLanguage, toggleAutoTranslate } =
+    useAccessibility();
 
   const { selectedLanguage, langOptions } = useLanguage();
-  const currentLanguageOption = langOptions.find(option => option.value === selectedLanguage);
-  const currentLanguageLabel = currentLanguageOption ? currentLanguageOption.lang : selectedLanguage;
+  const currentLanguageOption = langOptions.find(
+    (option) => option.value === selectedLanguage
+  );
+  const currentLanguageLabel = currentLanguageOption
+    ? currentLanguageOption.lang
+    : selectedLanguage;
 
-  const { 
-    isProcessing, 
-    isTranscribing, 
-    isPaused, 
-    handleSpeechToText, 
+  // Using the updated hook that returns isStopped (true when transcription is off)
+  const {
+    isProcessing,
+    isStopped,
+    isPaused,
+    handleSpeechToText,
+    handleResumeTranscription,
+    handlePauseTranscription,
     handleStopTranscription,
-    handlePauseResume 
   } = useSpeechToText();
+
+  // Determine if transcription is active
+  const isTranscribing = !isStopped;
+
+  // control functions use the hook's functions directly 
+  const startTranscription = () => {
+    handleSpeechToText();
+  }
+
+  const togglePlayPause = () => {
+    if (isPaused) {
+      handleResumeTranscription();
+    } else {
+      handlePauseTranscription();
+    }
+  }
+
+  const stopTranscription = () => {
+    handleStopTranscription();
+  }
 
   return (
     <motion.div variants={fadeInVariants} initial="initial" animate="animate" exit="exit" layout>
       <Card className="w-80 shadow-lg border-0 overflow-hidden relative">
         {/* Decorative background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.05 }} className="absolute top-40 -right-8 w-32 h-32">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.05 }}
+            className="absolute top-40 -right-8 w-32 h-32"
+          >
             <Languages className="w-full h-full text-primary" strokeWidth={0.5} />
           </motion.div>
         </div>
@@ -59,7 +90,7 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
             <SettingHeader icon={Mic} title="Transcription Controls" />
             <div className="flex justify-center gap-3">
               <AnimatePresence mode="wait">
-                {!isTranscribing ? (
+                {isStopped ? (
                   <motion.div
                     key="start"
                     initial={{ scale: 0.8, opacity: 0 }}
@@ -71,7 +102,7 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
                       variant="default"
                       size="lg"
                       className="h-16 bg-green-600 hover:bg-green-500 text-white px-6 rounded-full text-base font-medium focus:ring-4 focus:ring-green-300 relative overflow-hidden"
-                      onClick={handleSpeechToText}
+                      onClick={startTranscription}
                       aria-label="Start transcribing"
                       disabled={isProcessing}
                     >
@@ -85,48 +116,48 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
                     </Button>
                   </motion.div>
                 ) : (
-                  <>
-                    <motion.div
-                      key="pause-resume"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      transition={{ type: "spring", duration: 0.5 }}
+                  <motion.div
+                    key="controls"
+                    className="flex gap-3"
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ type: "spring", duration: 0.5 }}
+                  >
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="h-14 w-14 hover:bg-blue-400 hover:text-white rounded-full border-2 focus:ring-4 focus:ring-green-300 relative"
+                      onClick={togglePlayPause}
+                      aria-label={
+                        isPaused ? "Resume transcription" : "Pause transcription"
+                      }
                     >
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        className="h-16 w-16 hover:bg-blue-400 hover:text-white rounded-full border-2 focus:ring-4 focus:ring-green-300 relative"
-                        onClick={handlePauseResume}
-                        aria-label={isPaused ? "Resume transcribing" : "Pause transcribing"}
-                      >
-                        <motion.div
-                          className="absolute inset-0 rounded-full border-2 border-green-300/30"
-                          animate={{ scale: [1, 1.2], opacity: [0.3, 0] }}
-                          transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "easeOut" }}
-                        />
-                        {isPaused ? <Play className="h-6 w-6" /> : <Pause className="h-6 w-6" />}
-                      </Button>
-                    </motion.div>
-                    <motion.div
-                      key="stop"
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      transition={{ type: "spring", duration: 0.5 }}
+                      <motion.div
+                        className="absolute inset-0 rounded-full border-2 border-green-300/30"
+                        animate={{ scale: [1, 1.2], opacity: [0.3, 0] }}
+                        transition={{
+                          duration: 1,
+                          repeat: Number.POSITIVE_INFINITY,
+                          ease: "easeOut",
+                        }}
+                      />
+                      {isPaused ? (
+                        <Play className="h-6 w-6" />
+                      ) : (
+                        <Pause className="h-6 w-6" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="lg"
+                      className="h-14 w-14 bg-red-600 hover:bg-red-500 duration-300 text-white rounded-full focus:ring-4 focus:ring-red-300"
+                      onClick={stopTranscription}
+                      aria-label="Stop transcribing"
                     >
-                      <Button
-                        variant="destructive"
-                        size="lg"
-                        className="h-16 bg-red-600 hover:bg-red-500 text-white px-6 rounded-full text-base font-medium focus:ring-4 focus:ring-red-300"
-                        onClick={handleStopTranscription}
-                        aria-label="Stop transcribing"
-                      >
-                        <SwitchCamera className="h-5 w-5 mr-2" />
-                        Stop Transcribing
-                      </Button>
-                    </motion.div>
-                  </>
+                      <Square className="h-6 w-6" />
+                    </Button>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>
@@ -173,7 +204,7 @@ export default function HearingImpairmentView({ onBack }: ViewProps) {
             <StatusCard
               title="Current Status"
               statusText={isPaused ? "Transcription paused" : "Transcribing audio..."}
-              isActive={isTranscribing && !isPaused}
+              isActive={!isStopped && !isPaused}
             />
           ) : (
             <motion.div key="help" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>

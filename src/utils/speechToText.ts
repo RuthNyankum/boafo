@@ -31,30 +31,6 @@ export const startTranscription = async (
   }
 };
 
-export const stopTranscription = async (): Promise<TranscriptionResponse> => {
-  try {
-    const response = await chrome.runtime.sendMessage({ 
-      type: 'STOP_TRANSCRIPTION'
-    });
-    
-    if (response?.status === 'success') {
-      return {
-        status: 'success',
-        message: 'Speech recognition stopped'
-      };
-    } else {
-      return {
-        status: 'error',
-        message: response?.message || 'Failed to stop speech recognition'
-      };
-    }
-  } catch (error) {
-    return {
-      status: 'error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
-  }
-};
 export const pauseTranscription = async (): Promise<TranscriptionResponse> => {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ 
@@ -93,4 +69,28 @@ export const resumeTranscription = async (): Promise<TranscriptionResponse> => {
       }
     });
   });
+};
+export const stopTranscription = async (): Promise<TranscriptionResponse> => {
+  try {
+    const response = await chrome.runtime.sendMessage({ 
+      type: 'STOP_TRANSCRIPTION'
+    });
+    
+    if (response?.status === 'success') {
+      return {
+        status: 'success',
+        message: 'Speech recognition stopped'
+      };
+    } else {
+      return {
+        status: 'error',
+        message: response?.message || 'Failed to stop speech recognition'
+      };
+    }
+  } catch (error) {
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
 };

@@ -1,43 +1,37 @@
-import { useCallback, useState } from 'react';
-import { startTranscription, stopTranscription, pauseTranscription, resumeTranscription } from '../utils/speechToText';
-import { useLanguage } from '../context/language.context';
+import { useCallback, useState } from "react";
+import {
+  startTranscription,
+  stopTranscription,
+  pauseTranscription,
+  resumeTranscription,
+} from "../utils/speechToText";
+import { useLanguage } from "../context/language.context";
 
 export const useSpeechToText = () => {
   const { selectedLanguage } = useLanguage();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  // Local state for process control
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [isStopped, setIsStopped] = useState<boolean>(true);
 
   const handleSpeechToText = useCallback(async () => {
-    if (isProcessing || isTranscribing) return;
+    // Only start if not already processing and currently stopped.
+    if (isProcessing || !isStopped) return;
     try {
       setIsProcessing(true);
-      const response = await startTranscription({ language: selectedLanguage });
-      if (response.status === 'success') {
-        setIsTranscribing(true);
-        setIsPaused(false);
-      }
+      setIsStopped(false);
+      setIsPaused(false);
+      await startTranscription({ language: selectedLanguage });
     } catch (error) {
       console.error("Speech-to-text error:", error);
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, isTranscribing, selectedLanguage]);
-
-  const handleStopTranscription = useCallback(async () => {
-    // Optimistically update state immediately
-    setIsTranscribing(false);
-    setIsPaused(false);
-    try {
-      await stopTranscription();
-    } catch (error) {
-      console.error("Error stopping transcription:", error);
-      // Optionally revert state here if needed
-    }
-  }, []);
+  }, [isProcessing, isStopped, selectedLanguage]);
 
   const handlePauseTranscription = useCallback(async () => {
-    // Optimistically update state so UI shows pause immediately
+    // Only pause if transcription is active and not already paused.
+    if (isStopped || isPaused) return;
     setIsPaused(true);
     try {
       await pauseTranscription();
@@ -45,10 +39,11 @@ export const useSpeechToText = () => {
       console.error("Error pausing transcription:", error);
       setIsPaused(false);
     }
-  }, []);
+  }, [isStopped, isPaused]);
 
   const handleResumeTranscription = useCallback(async () => {
-    // Optimistically update state so UI shows resume immediately
+    // Only resume if transcription is active and currently paused.
+    if (isStopped || !isPaused) return;
     setIsPaused(false);
     try {
       await resumeTranscription();
@@ -56,24 +51,28 @@ export const useSpeechToText = () => {
       console.error("Error resuming transcription:", error);
       setIsPaused(true);
     }
-  }, []);
+  }, [isStopped, isPaused]);
 
-  const handlePauseResume = useCallback(async () => {
-    if (isPaused) {
-      await handleResumeTranscription();
-    } else {
-      await handlePauseTranscription();
+  const handleStopTranscription = useCallback(async () => {
+    if (isStopped) return;
+    // Optimistically update state: transcription stops and pause is reset.
+    setIsStopped(true);
+    setIsPaused(false);
+    try {
+      await stopTranscription();
+    } catch (error) {
+      console.error("Error stopping transcription:", error);
+      // Optionally, you could revert state here.
     }
-  }, [isPaused, handlePauseTranscription, handleResumeTranscription]);
+  }, [isStopped]);
 
-  return { 
-    isProcessing, 
-    isTranscribing, 
+  return {
+    isProcessing,
+    isStopped,
     isPaused,
-    handleSpeechToText, 
-    handleStopTranscription,
+    handleSpeechToText,
     handlePauseTranscription,
     handleResumeTranscription,
-    handlePauseResume
+    handleStopTranscription,
   };
 };
